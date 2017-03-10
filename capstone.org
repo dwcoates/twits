@@ -44,6 +44,10 @@ dataframe creation is 48.40times slower than reading.
 #+END_SRC
 
 * Explore Data
+** Sample data
+
+ - [[https://www.dropbox.com/s/yl2sjltahxvr15k/gnip-csv_1329182356861_1329182656861.csv?dl=0][dropbox link]]
+
 ** Preliminary
 
 There's lots of data with nans. Numpy.nan look like floats.
@@ -61,3 +65,4 @@ Dropping nan from the data.
 #+BEGIN_SRC ipython :session  :exports both :results none
 dfn = df.dropna(subset = ['text'])
 #+END_SRC
+
