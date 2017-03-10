@@ -1,0 +1,63 @@
+* Introduction
+* Load data
+
+#+BEGIN_SRC ipython :session :exports code :results none
+import pandas as pd
+import json
+import io
+import time
+#+END_SRC
+
+#+BEGIN_SRC ipython :session :exports code :results none
+start = time.time()
+data = io.open("./gnip-csv_1329182356861_1329182656861.csv?dl=0",
+               encoding='latin-1').read().strip()
+data_time = time.time() - start
+print "Time to read data: {} seconds".format(data_time)
+#+END_SRC
+
+#+BEGIN_SRC ipython :session :exports code :results none
+  data = "[" + data[:-1] + "]"  # can forget this
+
+  start = time.time()
+  df = pd.read_json(data)
+  df_time = time.time() - start
+#+END_SRC
+
+#+BEGIN_SRC ipython :session :exports code :results org
+"Time to create dataframe: {:.2f} seconds".format(df_time)
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC org
+Time to create dataframe: 23.51 seconds
+#+END_SRC
+
+#+BEGIN_SRC ipython :session  :exports code :results org :noweb yes 
+("dataframe creation is {:.2f}" + 
+ "times slower than reading.").format(df_time / float(data_time))
+#+END_SRC
+
+#+RESULTS:
+#+BEGIN_SRC org
+dataframe creation is 48.40times slower than reading.
+#+END_SRC
+
+* Explore Data
+** Preliminary
+
+There's lots of data with nans. Numpy.nan look like floats.
+
+#+BEGIN_SRC ipython :session :exports both :results none
+import collections
+
+for i in df.text:
+    if not isinstance(i, collections.Iterable):
+       print(type(i), i) 
+#+END_SRC
+
+Dropping nan from the data.
+
+#+BEGIN_SRC ipython :session  :exports both :results none
+dfn = df.dropna(subset = ['text'])
+#+END_SRC
