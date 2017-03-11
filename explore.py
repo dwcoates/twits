@@ -1,5 +1,4 @@
 import pandas as pd
-import json
 import io
 import time
 
@@ -9,7 +8,7 @@ from matplotlib import pyplot as plt
 
 start = time.time()
 print "reading data..."
-data = io.open("./gnip-csv_1329182356861_1329182656861.csv?dl=0",
+data = io.open("./data_sample.json",
                encoding='latin-1').read().strip()
 data_time = time.time() - start
 print "Time to read data: {:.2f} seconds".format(data_time)
@@ -34,7 +33,7 @@ plt.hist(lengths, bins=300)
 plt.show()
 
 fig = plt.figure(1, figsize = (8.5,11))
-fig.suptitle('Tweet text length distribution')
+fig.suptitle('Retweet length distribution')
 plt.xlim((0,1000))
-plt.hist(dfn.retweet_count.values, bins=200)
+plt.hist(dfn[dfn.retweet_count > 100].retweet_count.values, bins=200)
 plt.show()
