@@ -1,6 +1,9 @@
+#! /usr/bin/python
+
 """
 Preprocess json files.
 """
+
 import logging
 
 import json
@@ -59,7 +62,7 @@ def process_json(filename):
         try:
             if "delete" in j:
                 history["total_deletes"] += 1
-            elif j["user"]["lang"] is not "en":
+            elif j["user"]["lang"] is "en":
                 out = out_line(j["id_str"],
                                j["retweeted"],
                                j["created_at"],
@@ -93,8 +96,10 @@ def process_json(filename):
                 fout.write(out)
         except UnicodeEncodeError as ex:
             history["encode_exceptions"] += 1
-        except Exception as ex:
+            logging.warning("Encoding exception: {}".format(ex.message))
+        except Exception:
             history["other_exceptions"] += 1
+            logging.warning("Other exception: {}".format(ex.message))
 
     logging.warning(
         "Encode exceptions for '{}': {}".format(filename,
@@ -105,15 +110,21 @@ def process_json(filename):
     logging.info(
         "Total deletes for '{}': {}".format(filename,
                                             history["total_deletes"]))
-    fout.close();
+
+    fout.close()
+
 
     logging.info("Finished reading '{}'...".format(filename))
 
+
+
+logging.info("Clearning output dir...")
 clear_output_dir(dest_path) # remove data remnants
 
 dirs = listdir(origin_path)
 
 # max?
+logging.info("Processing {} dirs...".format(len(dirs)))
 for f in dirs:
     if max <= 0:
         break
