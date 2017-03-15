@@ -1,24 +1,22 @@
 * Introduction
 * Load data
 
-#+BEGIN_SRC ipython :session :exports code :results none
+#+BEGIN_SRC ipython :session :exports none :results none
 import pandas as pd
 import json
-import io
+import gzip
 import time
 #+END_SRC
 
 #+BEGIN_SRC ipython :session :exports code :results none
 start = time.time()
-data = io.open("./gnip-csv_1329182356861_1329182656861.csv?dl=0",
-               encoding='latin-1').read().strip()
+gzip.open("./data_sample.json.gz").read().decode('latin1')
 data_time = time.time() - start
 print "Time to read data: {} seconds".format(data_time)
 #+END_SRC
 
 #+BEGIN_SRC ipython :session :exports code :results none
   data = "[" + data[:-1] + "]"  # can forget this
-
   start = time.time()
   df = pd.read_json(data)
   df_time = time.time() - start
@@ -53,16 +51,36 @@ dataframe creation is 48.40times slower than reading.
 There's lots of data with nans. Numpy.nan look like floats.
 
 #+BEGIN_SRC ipython :session :exports both :results none
-import collections
+  import collections
 
-for i in df.text:
-    if not isinstance(i, collections.Iterable):
-       print(type(i), i) 
+  for i in df.text:
+      if not isinstance(i, collections.Iterable):
+         print(type(i), i) 
 #+END_SRC
 
 Dropping nan from the data.
 
 #+BEGIN_SRC ipython :session  :exports both :results none
-dfn = df.dropna(subset = ['text'])
+  dfn = df.dropna(subset = ['text'])
 #+END_SRC
 
+** Sample
+
+#+BEGIN_SRC ipython :session :exports code
+from preprocessing import read_json
+
+df = pd.DataFrame(read_json("./data_sample.json.gz"), gz=True)
+#+END_SRC
+
+#+BEGIN_SRC ipython :session :exports code
+from matplotlib import pyplot as plt
+
+statuses = np.array(df.user_statuses_count.sort_values(ascending=True))
+stats = statuses[(statuses > 10) & (statuses < 20000)]
+#+END_SRC
+
+#+BEGIN_SRC ipython :session :file ./img/py_WrxBel.png  :exports results :results
+plt.hist(stats, bins=100)
+#+END_SRC
+
+* Conclusion
