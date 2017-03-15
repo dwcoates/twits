@@ -77,15 +77,22 @@ def read_json(filename, gz=None):
     _open = gzip.open if gz else open
 
     parse_fails = 0
-    with open(filename) as f:
-        content = f.read().decode("unicode_escape").encode("utf8")
-        content = content.strip()[:-3] + "]"
+    with _open(filename) as f:
+        content = f.read().decode("raw_unicode_escape").encode("utf8")
+        content = content.strip()[:-3]
+        json_lines = content.split(",\n")
         data = []
-        try:
-            data = json.loads(content)
-        except ValueError as ex:
-            print ex.message
-            data = None
+        fails = 0
+        for i, line in enumerate(json_lines):
+            try:
+                data.append(json.loads(line))
+            except ValueError as ex:
+                fails += 1
+            except Exception:
+                print "JSON OBJECT:".format(i)
+        print "FAILURE_RATE: [{0}/{1}] ({2:.2f}%)".format(fails,
+                                                          len(json_lines),
+                                                          100*(fails/float(len(json_lines))))
 
     return data
 
