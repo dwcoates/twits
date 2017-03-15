@@ -103,7 +103,10 @@ def process_json(filename, output_filename, gz=False):
     with open(output_filename, 'wb') as fout:
         tweet_writer = csv.writer(fout)
         tweet_writer.writerow(FEATURES.keys()) # csv header
-        for i, j in enumerate(read_json(filename, gz=gz)):
+        print "Reading '{}'...".format(f)
+        js = read_json(filename, gz=gz)
+        print "Processing...".format(f)
+        for i, j in enumerate(js):
             if "delete" in j:
                 continue # ignore deletes for now
             if "scrub_geo" in j:
@@ -154,10 +157,7 @@ if __name__ == "__main__":
     DEST_PATH = os.path.abspath(sys.argv[2])
     DATA_PATH = os.path.abspath(sys.argv[1])
 
-    if len(sys.argv) == 4:
-        test_limit = int(sys.argv[3])
-    else:
-        text_limit = None
+    TEST_LIMIT = int(sys.argv[3]) if len(sys.argv) >= 4 else None
 
     # be careful to not delete stuff that shouldn't be deleted
     print "Delete all files in '{}' directory?".format(
@@ -176,23 +176,23 @@ if __name__ == "__main__":
     if len(dirs) == 0:
         raise ValueError("data directory '{}' is empty.".format(DATA_PATH))
 
-    logging.info("\nProcessing {} dirs...".format(len(dirs)))
+    logging.info("Processing {} dirs...".format(len(dirs)))
 
-    if test_limit:
-        dirs = [choice(dirs) for _ in xrange(test_limit)]
+    if TEST_LIMIT:
+        dirs = [choice(dirs) for _ in xrange(TEST_LIMIT)]
 
     file_count = 0
-    for f in dirs:
+    for i, f in enumerate(dirs):
         f_comps = f.split(".")
         if "json" in f_comps:
+            print "\n[{}/{}]".format(i+1, len(dirs))
             try:
-                print "Processing '{}'...".format(f)
                 process_json(os.path.join(DATA_PATH, f),
                              os.path.join(DEST_PATH, f_comps[0]+".csv"),
                              gz="gz" in f_comps)
                 file_count += 1
             except Exception as ex:
-                print ex
+                logging.error(ex.message)
                 print ("ERROR: Failed to processes" +
                        " '{}' in '{}' to '{}'.").format(f,
                                                         DATA_PATH,
