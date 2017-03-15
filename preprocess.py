@@ -53,10 +53,10 @@ def read_json(filename, gz=None):
 
     _open = gzip.open if gz else open
 
+    parse_fails = 0
     with _open(filename) as f:
         content = f.read().decode("latin1")
         content = content.strip()
-        parse_fails = 0
         data = []
         for line in content.split(",\n"):
             js = None
@@ -100,13 +100,20 @@ def process_json(filename, output_filename, gz=False):
 
     logging.info("Reading '{}'...".format(filename))
 
-    with open(output_filename, 'rb') as fout:
+    with open(output_filename, 'wb') as fout:
         tweet_writer = csv.writer(fout)
         tweet_writer.writerow(FEATURES.keys()) # csv header
         for i, j in enumerate(read_json(filename, gz=gz)):
+            if "delete" in j:
+                continue # ignore deletes for now
+            if "scrub_geo" in j:
+                continue # I don't know what "scrub_geo" is
             try:
-                if "delete" in j:
-                    pass # ignore deletes for now
+                if "user" not in j:
+                    logging.error(
+                        "Attempt to parse json object without 'user' key: {}".format(j))
+                    raise ValueError(
+                        "Attempt to parse json object without 'user' key")
                 elif j["user"]["lang"] == "en":
                     tweet_writer.writerow(csvify_json_obj(j))
                     history["english_count"] += 1
@@ -116,6 +123,8 @@ def process_json(filename, output_filename, gz=False):
                 history["encode_exceptions"] += 1
                 logging.warning("Encoding exception: {}".format(ex.message))
             except KeyError as ex:
+                raise ex
+            except ValueError as ex:
                 raise ex
             except Exception as ex:
                 history["other_exceptions"] += 1
@@ -130,31 +139,66 @@ def process_json(filename, output_filename, gz=False):
 
     logging.info("Finished reading '{}'...".format(filename))
 
+
+# Script
 if __name__ == "__main__":
+    from random import choice
+
     if len(sys.argv) < 3:
         raise ValueError(
             "{} accepts 2 arguments, recieved {}".format(
                 __file__,
                 len(sys.argv) - 1))
 
-    dest_path = sys.argv[2]
-    data_path = sys.argv[1]
 
-    print os.listdir(data_path)
+    DEST_PATH = os.path.abspath(sys.argv[2])
+    DATA_PATH = os.path.abspath(sys.argv[1])
 
-    logging.info("Clearning output dir...")
+    if len(sys.argv) == 4:
+        test_limit = int(sys.argv[3])
+    else:
+        text_limit = None
 
-    clear_output_dir(dest_path) # remove data remnants
+    # be careful to not delete stuff that shouldn't be deleted
+    print "Delete all files in '{}' directory?".format(
+        os.path.abspath(DEST_PATH))
+    INPUT = raw_input("yes or no> ")
+    if INPUT != "yes":
+        exit()
 
-    # dirs = listdir(origin_path)
+    # delete files in destination directory
+    logging.info("Clearing output dir...")
+    for f in os.listdir(DEST_PATH):
+        os.remove(os.path.join(DEST_PATH, f))
 
-    # # max?
-    # logging.info("Processing {} dirs...".format(len(dirs)))
-    # for f in dirs:
-    #     if max <= 0:
-    #         break
-    #     max -= 1
-    #     history["file_count"] += 1
-    #     process_json(dest_path+f)
-    #     fout = open(dest_path+f[0:-3], 'w')
-    #     fout.write(get_header())
+    dirs = os.listdir(DATA_PATH)
+
+    if len(dirs) == 0:
+        raise ValueError("data directory '{}' is empty.".format(DATA_PATH))
+
+    logging.info("\nProcessing {} dirs...".format(len(dirs)))
+
+    if test_limit:
+        dirs = [choice(dirs) for _ in xrange(test_limit)]
+
+    file_count = 0
+    for f in dirs:
+        f_comps = f.split(".")
+        if "json" in f_comps:
+            try:
+                print "Processing '{}'...".format(f)
+                process_json(os.path.join(DATA_PATH, f),
+                             os.path.join(DEST_PATH, f_comps[0]+".csv"),
+                             gz="gz" in f_comps)
+                file_count += 1
+            except Exception as ex:
+                print ex
+                print ("ERROR: Failed to processes" +
+                       " '{}' in '{}' to '{}'.").format(f,
+                                                        DATA_PATH,
+                                                        DEST_PATH)
+        else:
+            print "'{}' has been skipped for processing.".format(f)
+
+
+    logging.info("Processed {}/{} files".format(file_count, len(dirs)))
