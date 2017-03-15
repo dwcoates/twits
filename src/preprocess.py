@@ -9,12 +9,31 @@ Preprocess json files.
 import logging
 import sys
 import os
+import re
+import codecs
 
 import json
 import gzip
 import csv
 
 logging.basicConfig(filename="preprocess.log", level=logging.DEBUG)
+
+
+ESCAPE_SEQUENCE_RE = re.compile(r"""
+     \\U........
+    | \\u....
+    | \\x..
+    | \\[0-7]{1,3}
+    | \\N\{[^}]+\}
+    | \\[\\'\\"abfnrtv]
+    """, re.UNICODE | re.VERBOSE)
+
+def decode_escapes(s):
+    def decode_match(match):
+        return codecs.decode(match.group(0), 'unicode-escape')
+
+    return ESCAPE_SEQUENCE_RE.sub(decode_match, s)
+
 
 # feature csv names with corresponding json paths
 FEATURES = [("id_str",                    lambda d: d["id_str"]),
@@ -58,29 +77,15 @@ def read_json(filename, gz=None):
     _open = gzip.open if gz else open
 
     parse_fails = 0
-    with _open(filename) as f:
-        content = f.read().decode("latin1")
-        content = content.strip()
+    with open(filename) as f:
+        content = f.read().decode("unicode_escape").encode("utf8")
+        content = content.strip()[:-3] + "]"
         data = []
-        for line in content.split(",\n"):
-            js = None
-            try:
-                js = json.loads(line)
-            except Exception as ex:
-                parse_fails+=1
-                if parse_fails and not parse_fails % 100:
-                    print ("WARNING: {0} json object " +
-                           "parse failures ({1})").format(parse_fails,
-                                                          ex.message)
-            if js:
-                data.append(js)
-
-    if parse_fails:
-        print ("WARNING: {} json object" +
-               "parse failures while reading '{}'.").format(parse_fails,
-                                                            filename)
-    else:
-        print "No parse failures while reading '{}'".format(filename)
+        try:
+            data = json.loads(content)
+        except ValueError as ex:
+            print ex.message
+            data = None
 
     return data
 
