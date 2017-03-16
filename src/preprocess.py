@@ -16,7 +16,7 @@ import json
 import gzip
 import csv
 
-logging.basicConfig(filename="preprocess.log", level=logging.DEBUG)
+logging.basicConfig(filename="../data/preprocess.log", level=logging.DEBUG)
 
 
 ESCAPE_SEQUENCE_RE = re.compile(r"""
@@ -137,7 +137,8 @@ def process_json(filename, output_filename, gz=False):
                     tweet_writer.writerow(csvify_json_obj(j))
                     history["english_count"] += 1
                 else:
-                    pass # don't care about non-English tweets
+                    # don't care about non-English tweets
+                    pass
             except UnicodeEncodeError as ex:
                 history["encode_exceptions"] += 1
                 logging.warning("Encoding exception: {}".format(ex.message))
