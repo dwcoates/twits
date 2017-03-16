@@ -78,21 +78,21 @@ def read_json(filename, gz=None):
 
     parse_fails = 0
     with _open(filename) as f:
-        content = f.read().decode("raw_unicode_escape").encode("utf8")
+        content = f.read().decode("raw_unicode_escape")
         content = content.strip()[:-3]
         json_lines = content.split(",\n")
         data = []
-        fails = 0
+        encode_fails = 0
         for i, line in enumerate(json_lines):
             try:
                 data.append(json.loads(line))
             except ValueError as ex:
-                fails += 1
+                encode_fails += 1
             except Exception:
-                print "JSON OBJECT:".format(i)
-        print "FAILURE_RATE: [{0}/{1}] ({2:.2f}%)".format(fails,
-                                                          len(json_lines),
-                                                          100*(fails/float(len(json_lines))))
+                print "JSON OBJECT FAILED:".format(i)
+        logging.warning("FAILURE_RATE: [{0}/{1}] ({2:.2f}%)".format(encode_fails,
+                                                                    len(json_lines),
+                                                                    100*(encode_fails/float(len(json_lines)))))
 
     return data
 
@@ -119,9 +119,9 @@ def process_json(filename, output_filename, gz=False):
     with open(output_filename, 'wb') as fout:
         tweet_writer = csv.writer(fout)
         tweet_writer.writerow(HEADERS) # csv header
-        print "Reading '{}'...".format(f)
+        print "Reading '{}'...".format(filename)
         js = read_json(filename, gz=gz)
-        print "Processing...".format(f)
+        print "Processing...".format(filename)
         for i, j in enumerate(js):
             if "delete" in j:
                 continue # ignore deletes for now
@@ -130,9 +130,9 @@ def process_json(filename, output_filename, gz=False):
             try:
                 if "user" not in j:
                     logging.error(
-                        "Attempt to parse json object without 'user' key: {}".format(j))
-                    raise ValueError(
-                        "Attempt to parse json object without 'user' key")
+                        ("Attempt to parse json object" +
+                         "without 'user' key: {} with keys: {}").format(j,
+                                                                        j.keys()))
                 elif j["user"]["lang"] == "en":
                     tweet_writer.writerow(csvify_json_obj(j))
                     history["english_count"] += 1
@@ -150,10 +150,10 @@ def process_json(filename, output_filename, gz=False):
                 logging.error("Other exception: {}".format(ex.message))
 
             logging.warning(
-                "Encode exceptions for '{}': {}".format(
+                "Encode exceptions: {}".format(
                     filename, history["encode_exceptions"]))
             logging.warning(
-                "Other exceptions for '{}': {}".format(
+                "Other exceptions: {}".format(
                     filename, history["encode_exceptions"]))
 
     logging.info("Finished reading '{}'...".format(filename))
