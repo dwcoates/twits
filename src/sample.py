@@ -8,7 +8,9 @@ import logging
 
 import pandas as pd
 
-from twits.src import preprocessing
+sys.path.append('/home/dodge/workspace/twits')
+
+from preprocess import HEADERS
 
 
 logging.basicConfig(filename="../data/sample.log", level=logging.DEBUG)
@@ -22,12 +24,12 @@ def sample_rows(filename, portion):
     """
 
     start = time.time()
-    df = pd.read_csv("../data/csv/data_sample.csv")
+    df = pd.read_csv(filename)
     read_time = time.time() - start
 
     num_samples = int(len(df.index) * portion)
 
-    return pd.DataFrame.sample(n = num_samples).to_records()
+    return df.sample(n = num_samples).to_records()
 
 def sample_files(directory, output_filename, portion):
     """
@@ -35,19 +37,20 @@ def sample_files(directory, output_filename, portion):
     directory.
     """
 
-    FILES = os.listdir(os.path.abspath(directory))
-    FILENAME = os.path.join(directory, output_filename)
+    DATA_DIR = os.path.abspath(directory)
+    FILES = os.listdir(DATA_DIR)
+    FILENAME = os.path.basename(output_filename)
 
-    with open(FILENAME, 'wb') as fout:
+    with open(os.path.join(DATA_DIR, FILENAME), 'wb') as fout:
         sample_writer = csv.writer(fout)
-        sample_writer.writerow(preprocess.HEADERS)
+        sample_writer.writerow(HEADERS)
         for i, f in enumerate(FILES):
             print "\n[{}/{}]".format(i+1, len(FILES))
             if "csv" != f.split(".")[-1]:
                 print "Skipping '{}' for sampling.".format(f)
                 continue
             try:
-                rows = sample_rows(f, portion)
+                rows = sample_rows(os.path.join(DATA_DIR, f), portion)
                 for i, row in enumerate(rows):
                     if len(row)-1 == len(HEADERS):
                         sample_writer.writerow(row)
@@ -61,6 +64,7 @@ def sample_files(directory, output_filename, portion):
                 logging.error("ERROR: failure to read and sample '{}'".format(f))
 
 
+# Script
 if __name__ == "__main__":
     if len(sys.argv) < 4:
         raise ValueError(
@@ -69,7 +73,7 @@ if __name__ == "__main__":
                 len(sys.argv) - 1))
 
     DIRECTORY = sys.argv[1]
-    SAMPLES_FILE = sys.argv[3]
+    SAMPLES_FILE = sys.argv[2]
     PORTION = sys.argv[3]
 
     try:

@@ -14,7 +14,7 @@ import codecs
 
 import json
 import gzip
-import csv
+import unicodecsv as csv
 
 logging.basicConfig(filename="../data/preprocess.log", level=logging.DEBUG)
 
@@ -90,9 +90,9 @@ def read_json(filename, gz=None):
                 encode_fails += 1
             except Exception:
                 print "JSON OBJECT FAILED:".format(i)
-        logging.warning("FAILURE_RATE: [{0}/{1}] ({2:.2f}%)".format(encode_fails,
-                                                                    len(json_lines),
-                                                                    100*(encode_fails/float(len(json_lines)))))
+        print "FAILURE_RATE: [{0}/{1}] ({2:.2f}%)".format(encode_fails,
+                                                          len(json_lines),
+                                                          100*(encode_fails/float(len(json_lines))))
 
     return data
 
