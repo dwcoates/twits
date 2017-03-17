@@ -59,7 +59,7 @@ def read_json(filename, gz=None):
 
     parse_fails = 0
     with _open(filename) as f:
-        content = f.read().decode("raw_unicode_escape").encode("utf8")
+        content = f.read().decode("raw_unicode_escape")
         content = content.strip()[:-3]
         json_lines = content.split(",\n")
         data = []
@@ -131,13 +131,6 @@ def process_json(filename, output_filename, gz=False):
                 history["other_exceptions"] += 1
                 logging.error("Other exception: {}".format(ex.message))
 
-            logging.warning(
-                "Encode exceptions: {}".format(
-                    filename, history["encode_exceptions"]))
-            logging.warning(
-                "Other exceptions: {}".format(
-                    filename, history["encode_exceptions"]))
-
     logging.info("Finished reading '{}'...".format(filename))
 
 
@@ -151,10 +144,8 @@ if __name__ == "__main__":
                 __file__,
                 len(sys.argv) - 1))
 
-
     DEST_PATH = os.path.abspath(sys.argv[2])
     DATA_PATH = os.path.abspath(sys.argv[1])
-
     TEST_LIMIT = int(sys.argv[3]) if len(sys.argv) >= 4 else None
 
     # be careful to not delete stuff that shouldn't be deleted
@@ -184,6 +175,7 @@ if __name__ == "__main__":
         f_comps = f.split(".")
         if "json" in f_comps:
             print "\n[{}/{}]".format(i+1, len(dirs))
+            logging.info("\n[{}]:".format(i+1))
             try:
                 process_json(os.path.join(DATA_PATH, f),
                              os.path.join(DEST_PATH, f_comps[0]+".csv"),
