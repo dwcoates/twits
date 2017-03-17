@@ -9,31 +9,12 @@ Preprocess json files.
 import logging
 import sys
 import os
-import re
-import codecs
 
 import json
 import gzip
 import unicodecsv as csv
 
 logging.basicConfig(filename="../data/preprocess.log", level=logging.DEBUG)
-
-
-ESCAPE_SEQUENCE_RE = re.compile(r"""
-     \\U........
-    | \\u....
-    | \\x..
-    | \\[0-7]{1,3}
-    | \\N\{[^}]+\}
-    | \\[\\'\\"abfnrtv]
-    """, re.UNICODE | re.VERBOSE)
-
-def decode_escapes(s):
-    def decode_match(match):
-        return codecs.decode(match.group(0), 'unicode-escape')
-
-    return ESCAPE_SEQUENCE_RE.sub(decode_match, s)
-
 
 # feature csv names with corresponding json paths
 FEATURES = [("id_str",                    lambda d: d["id_str"]),
@@ -78,7 +59,7 @@ def read_json(filename, gz=None):
 
     parse_fails = 0
     with _open(filename) as f:
-        content = f.read().decode("raw_unicode_escape")
+        content = f.read().decode("raw_unicode_escape").encode("utf8")
         content = content.strip()[:-3]
         json_lines = content.split(",\n")
         data = []
