@@ -129,8 +129,10 @@ def process_json(filename, output_filename, gz=False):
                 raise ex
             except Exception as ex:
                 history["other_exceptions"] += 1
+                print "ERROR: Unexpected exception."
                 logging.error("Other exception: {}".format(ex.message))
 
+    print "Done."
     logging.info("Finished reading '{}'...".format(filename))
 
 

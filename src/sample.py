@@ -40,12 +40,14 @@ def sample_files(directory, output_filename, portion):
     DATA_DIR = os.path.abspath(directory)
     FILES = os.listdir(DATA_DIR)
     FILENAME = os.path.basename(output_filename)
+    OUTPUT_FILE = os.path.join(os.path.dirname(DATA_DIR), os.path.basename(FILENAME))
+    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
-    with open(os.path.join(DATA_DIR, FILENAME), 'wb') as fout:
+    with open(OUTPUT_FILE, 'wb') as fout:
         sample_writer = csv.writer(fout)
         sample_writer.writerow(HEADERS)
         for i, f in enumerate(FILES):
-            print "\n[{}/{}]".format(i+1, len(FILES))
+            sys.stdout.write('{}\r'.format("\033[95mSampling:\033[0m [{}/{}]".format(i+1, len(FILES))))
             if "csv" != f.split(".")[-1]:
                 print "Skipping '{}' for sampling.".format(f)
                 continue
@@ -62,6 +64,8 @@ def sample_files(directory, output_filename, portion):
             except Exception as ex:
                 print "Unknown Error occured in sample_files: {}".format(ex.message)
                 logging.error("ERROR: failure to read and sample '{}'".format(f))
+            sys.stdout.flush()
+    print "Done."
 
 
 # Script
