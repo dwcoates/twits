@@ -2,7 +2,7 @@
 
 import os
 import time
-import csv
+import unicodecsv as csv
 import sys
 import logging
 
@@ -60,6 +60,7 @@ def sample_files(directory, output_filename, portion):
                         msg = "Row #{} from '{}' has {} elements. It should have {}"
                         raise ValueError(msg.format(i+1, f, len(row)-1, len(HEADERS)))
             except ValueError as ex:
+                print "WARNING: {}".format(ex.message)
                 logging.warn("WARNING: {}".format(ex.message))
             except Exception as ex:
                 print "Unknown Error occured in sample_files: {}".format(ex.message)
@@ -78,7 +79,7 @@ if __name__ == "__main__":
 
     DIRECTORY = sys.argv[1]
     SAMPLES_FILE = sys.argv[2]
-    PORTION = sys.argv[3]
+    PORTION = float(sys.argv[3])
 
     try:
         sample_files(DIRECTORY, SAMPLES_FILE, PORTION)
