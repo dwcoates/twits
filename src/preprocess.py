@@ -184,6 +184,7 @@ if __name__ == "__main__":
                              gz="gz" in f_comps)
                 file_count += 1
             except Exception as ex:
+
                 logging.error(ex.message)
                 print ("ERROR: Failed to processes" +
                        " '{}' in '{}' to '{}'.").format(f,
