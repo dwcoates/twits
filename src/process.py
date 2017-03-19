@@ -9,8 +9,12 @@ import numpy as np
 
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
-print "{:,.2f}".format((df.retweet_count[df.retweet_count.apply(
-    lambda x: "+" in str(x))].size / df.retweet_count.size * 100))
+import warnings
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore",category=DeprecationWarning)
+    import md5, sha
+
 
 def process_date_time(df):
     # Date/Time
@@ -66,6 +70,6 @@ def process_file(filename):
     df = standardize_counts(df)
 
     print "Finished processing '{}' after {:,.2f} minutes".format(filename,
-                                                                  time.time() - start)
+                                                                  (time.time() - start) / 60)
 
     return df
