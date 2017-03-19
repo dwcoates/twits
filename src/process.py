@@ -3,17 +3,12 @@ from __future__ import division
 from dateutil import parser
 import sys
 import time
+import warnings
 
 import pandas as pd
 import numpy as np
 
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-
-import warnings
-
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore",category=DeprecationWarning)
-    import md5, sha
 
 
 def process_date_time(df):
@@ -54,7 +49,9 @@ def standardize_counts(df):
                  "user_listed_count",
                  "retweet_count"]
 
-    df[columns] = df[columns].apply(lambda c: stdscaler.fit_transform(pd.to_numeric(c)))
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore",category=DeprecationWarning)
+        df[columns] = df[columns].apply(lambda c: stdscaler.fit_transform(pd.to_numeric(c)))
 
     print "Time to standardize: {:,.2f} minutes".format((time.time() - start) / 60)
 
