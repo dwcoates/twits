@@ -16,10 +16,9 @@ def process_date_time(df):
     def parse(ts):
         ret = ts.split(" ")
         ret.pop(4)
-        return datetime.strptime(
-            parse(" ".join(ret), '%a %b %d %X %Y')
+        return datetime.strptime(parse(" ".join(ret), '%a %b %d %X %Y'))
 
-    # Date/Time
+
     start = time.time()
     sys.stdout.write("Converting to datetime...\r")
     df.created_at = df.created_at.apply(parse)
@@ -79,8 +78,8 @@ def drop_extra_columns(df):
 
     return df.drop(columns, axis=1)
 
-def add_y(df):
-    df.retweeted()
+def compute_and_add_target(df):
+    df.target = df.retweet_count / df.user_followers_count
 
     return df
 
