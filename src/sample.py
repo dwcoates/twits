@@ -8,12 +8,11 @@ import logging
 
 import pandas as pd
 
-sys.path.append('/home/dodge/workspace/twits')
+sys.path.insert(0, os.path.dirname(os.getcwd()))
 
-from preprocess import HEADERS
+from src import core
 
-
-logging.basicConfig(filename="../data/sample.log", level=logging.DEBUG)
+logging.basicConfig(filename="data/sample.log", level=logging.DEBUG)
 
 
 def sample_rows(filename, portion):
@@ -45,7 +44,7 @@ def sample_files(directory, output_filename, portion):
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
     with open(OUTPUT_FILE, 'wb') as fout:
         sample_writer = csv.writer(fout)
-        sample_writer.writerow(HEADERS)
+        sample_writer.writerow(core.BASE_HEADERS)
         for i, f in enumerate(FILES):
             sys.stdout.flush()
             sys.stdout.write('{}\r'.format("\033[95mSampling:\033[0m [{}/{}]".format(i+1, len(FILES))))
@@ -55,11 +54,11 @@ def sample_files(directory, output_filename, portion):
             try:
                 rows = sample_rows(os.path.join(DATA_DIR, f), portion)
                 for i, row in enumerate(rows):
-                    if len(row)-1 == len(HEADERS):
+                    if len(row)-1 == len(core.BASE_HEADERS):
                         sample_writer.writerow(row)
                     else:
                         msg = "Row #{} from '{}' has {} elements. It should have {}"
-                        raise ValueError(msg.format(i+1, f, len(row)-1, len(HEADERS)))
+                        raise ValueError(msg.format(i+1, f, len(row)-1, len(core.BASE_HEADERS)))
             except ValueError as ex:
                 print "WARNING: {}".format(ex.message)
                 logging.warn("WARNING: {}".format(ex.message))

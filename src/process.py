@@ -7,9 +7,9 @@ import time
 import warnings
 from datetime import datetime
 
-sys.path.insert(0, '/home/dodge/workspace/twits/src')
+sys.path.insert(0, '/home/dodge/workspace/twits')
 
-import core
+from twits.src import core
 
 import pandas as pd
 import numpy as np
@@ -97,11 +97,11 @@ def process_df(df):
     return df
 
 def process_file(filename, outfile):
-    if filename == outfile:
-        raise ValueError("ERROR: filename and outfile are identical.")
-
     filename = os.path.abspath(filename)
     outfile = os.path.abspath(outfile)
+
+    if filename == outfile:
+        raise ValueError("ERROR: filename and outfile are identical.")
 
     sys.stdout.write("Reading '{}'...\r".format(filename))
     df = read_csv(filename)
