@@ -52,15 +52,18 @@ def drop_extra_columns(df):
     """
     Drop useless columns that shouldn't have made it past preprocessing
     """
+    sys.stdout.write("Dropping extra columns...")
     return df.drop(core.DROP_COLUMNS, axis=1)
 
 def compute_and_add_target(df):
-    return df.assign(tweetability = df.retweet_count / df.user_followers_count)
+    sys.stdout.write("Adding target, tweetability...")
+    return df.assign(tweetability = df.retweet_count / (df.user_followers_count + 1))
 
 def add_log_transforms(df):
     """
     Should be called last
     """
+    sys.stdout.write("Adding log transforms...")
     COLUMNS   = ["user_friends_count",
                  "user_favourites_count",
                  "user_statuses_count",
@@ -68,7 +71,6 @@ def add_log_transforms(df):
                  "user_listed_count",
                  "retweet_count",
                  "tweetability"]
-
 
     return df
 
@@ -91,15 +93,24 @@ def process_df(df):
     return df
 
 def process_file(filename, outfile):
+    if filename == outfile:
+        raise ValueError("ERROR: filename and outfile are identical.")
 
-    sys.stdout.write("Reading '{}'...\r".format(os.path.abspath(filename)))
+    filename = os.path.abspath(filename)
+    outfile = os.path.abspath(outfile)
+
+    sys.stdout.write("Reading '{}'...\r".format(filename))
     df = read_csv(filename)
     sys.stdout.flush()
 
     df = process_df(df)
-    sys.stdout.write("Writing '{}'...\r".format(os.path.abspath(outfile)))
+    sys.stdout.write("Writing '{}'...\r".format(outfile))
     with open(outfile, 'wb') as fout:
         df.to_csv(fout, encoding="utf8")
+
+    file_base = filename.split(".csv")[0]
+    print "Creating train and test sets..."
+    process_train_and_test(df, file_base)
 
     print "Done."
 
@@ -111,21 +122,32 @@ def produce_train_and_test(df):
     return [X_train, X_test, y_train, y_test]
 
 def write_train_and_test(fname, X_train, X_test, y_train, y_test):
-    print "Writing to '{}'".format(fname)
+    print "Writing to files under '{}' prefix".format(fname)
 
-    X_train.to_csv(fname +  "_X_train.csv", encoding="utf8")
-    X_test.to_csv(fname +  "_X_test.csv", encoding="utf8")
-    y_train.to_csv(fname +  "_y_train.csv", encoding="utf8")
-    y_test.to_csv(fname +  "_y_test.csv", encoding="utf8")
+    filename = fname +  "_X_train.csv"
+    fout = open(filename, 'wb')
+    print "Writing to '{}'...".format(fout)
+    X_train.to_csv(fout, encoding="utf8")
 
-    return None
+    filename = fname +  "_X_test.csv"
+    fout = open(filename, 'wb')
+    print "Writing to '{}'...".format(fout)
+    X_test.to_csv(fout, encoding="utf8")
+
+    filename = fname +  "_y_train.csv"
+    fout = open(filename, 'wb', 'wb')
+    print "Writing to '{}'...".format(fout)
+    y_train.to_csv(fout, encoding="utf8")
+
+    filename = fname +  "_y_test.csv"
+    fout = open(filename, 'wb')
+    print "Writing to '{}'...".format(fout)
+    y_test.to_csv(fout, encoding="utf8")
 
 def process_train_and_test(df, outfile_basename):
     write_train_and_test(outfile_basename, *produce_train_and_test(df))
 
-    return None
-
-# unused
+    # UNUSED
 def standardize_counts(df):
     start = time.time()
     sys.stdout.write("Standardizing measures...\r")
