@@ -2,21 +2,25 @@ from __future__ import division
 
 from dateutil import parser
 import sys
+import os
 import time
 import warnings
 from datetime import datetime
+
+sys.path.insert(0, '/home/dodge/workspace/twits/src')
+
+import core
 
 import pandas as pd
 import numpy as np
 
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
-
 def process_date_time(df):
     def parse(ts):
         ret = ts.split(" ")
         ret.pop(4)
-        return datetime.strptime(parse(" ".join(ret), '%a %b %d %X %Y'))
+        return datetime.strptime(" ".join(ret), '%a %b %d %X %Y')
 
 
     start = time.time()
@@ -67,37 +71,40 @@ def drop_extra_columns(df):
     """
     Drop useless columns that shouldn't have made it past preprocessing
     """
-    columns = ["created_at.1",
-               "user_lang",
-               "user_notifications",
-               "user_verified",
-               "user_following",
-               "retweeted",
-               "favorited",
-               "contributors"]
-
-    return df.drop(columns, axis=1)
+    return df.drop(core.DROP_COLUMNS, axis=1)
 
 def compute_and_add_target(df):
-    df.target = df.retweet_count / df.user_followers_count
-
-    return df
+    return df.assign(tweetability = df.retweet_count / df.user_followers_count)
 
 def process_df(df):
+    original_size = df.size
+
+    start = time.time()
+
     df = process_date_time(df)
     df = process_retweet_count(df)
     df = standardize_counts(df)
     df = drop_extra_columns(df)
 
+    # add target
+    df = compute_and_add_target(df)
+
+    print "Finished processing after {:,.2f} minutes".format((time.time() - start) / 60)
+    print "DataFrame size reduced by {:.2f}%".format((1-(df.size / float(original_size)))*100)
+
     return df
 
-def process_file(filename):
-    print "Processing '{}'\r".format(filename)
-    start = time.time()
+def process_file(filename, outfile):
 
-    df = process_df(read_csv(filename))
+    sys.stdout.write("Reading '{}'...\r".format(os.path.abspath(filename)))
+    df = read_csv(filename)
+    sys.stdout.flush()
 
-    print "Finished processing '{}' after {:,.2f} minutes".format(filename,
-                                                                  (time.time() - start) / 60)
+    df = process_df(df)
+    sys.stdout.write("Writing '{}'...\r".format(os.path.abspath(outfile)))
+    with open(outfile, 'wb') as fout:
+        df.to_csv(fout, encoding="utf8")
+
+    print "Done."
 
     return df
