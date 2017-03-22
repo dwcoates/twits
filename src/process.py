@@ -52,12 +52,14 @@ def drop_extra_columns(df):
     """
     Drop useless columns that shouldn't have made it past preprocessing
     """
-    sys.stdout.write("Dropping extra columns...")
+    sys.stdout.write("Dropping extra columns...\r")
     return df.drop(core.DROP_COLUMNS, axis=1)
 
 def compute_and_add_target(df):
-    sys.stdout.write("Adding target, tweetability...")
-    return df.assign(tweetability = df.retweet_count / (df.user_followers_count + 1))
+    sys.stdout.write("Adding target, tweetability...\r")
+
+    return df.assign(
+        tweetability = df.apply(lambda x: int(x.retweet_count) / (x.user_followers_count + 1), axis=1))
 
 def add_log_transforms(df):
     """
@@ -82,10 +84,12 @@ def process_df(df):
     df = process_date_time(df)
     df = process_retweet_count(df)
     df = drop_extra_columns(df)
-    df = add_log_transforms(df)
 
     # add target
     df = compute_and_add_target(df)
+
+    # stuff that requires target
+    df = add_log_transforms(df)
 
     print "Finished processing after {:,.2f} minutes".format((time.time() - start) / 60)
     print "DataFrame size reduced by {:.2f}%".format((1-(df.size / float(original_size)))*100)
@@ -108,13 +112,11 @@ def process_file(filename, outfile):
     with open(outfile, 'wb') as fout:
         df.to_csv(fout, encoding="utf8")
 
-    file_base = filename.split(".csv")[0]
+    file_base = outfile.split(".csv")[0]
     print "Creating train and test sets..."
     process_train_and_test(df, file_base)
 
     print "Done."
-
-    return df
 
 def produce_train_and_test(df):
     X_train, X_test, y_train, y_test = train_test_split(df.drop("tweetability", axis=1), df.tweetability)
@@ -126,22 +128,22 @@ def write_train_and_test(fname, X_train, X_test, y_train, y_test):
 
     filename = fname +  "_X_train.csv"
     fout = open(filename, 'wb')
-    print "Writing to '{}'...".format(fout)
+    print "Writing to '{}'...".format(filename)
     X_train.to_csv(fout, encoding="utf8")
 
     filename = fname +  "_X_test.csv"
     fout = open(filename, 'wb')
-    print "Writing to '{}'...".format(fout)
+    print "Writing to '{}'...".format(filename)
     X_test.to_csv(fout, encoding="utf8")
 
     filename = fname +  "_y_train.csv"
-    fout = open(filename, 'wb', 'wb')
-    print "Writing to '{}'...".format(fout)
+    fout = open(filename, 'wb')
+    print "Writing to '{}'...".format(filename)
     y_train.to_csv(fout, encoding="utf8")
 
     filename = fname +  "_y_test.csv"
     fout = open(filename, 'wb')
-    print "Writing to '{}'...".format(fout)
+    print "Writing to '{}'...".format(filename)
     y_test.to_csv(fout, encoding="utf8")
 
 def process_train_and_test(df, outfile_basename):
