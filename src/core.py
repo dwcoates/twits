@@ -46,6 +46,9 @@ DROP_COLUMNS = ["created_at.1",
 
 CORE_FEATURES = [h for h in BASE_HEADERS if h not in DROP_COLUMNS]
 
+CORE_FEATURES.append("tweetability") # target feature
 
+
+# convenience function
 def pp(lst):
     print pd.Series(lst)
