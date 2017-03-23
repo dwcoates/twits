@@ -7,9 +7,12 @@ import time
 import warnings
 from datetime import datetime
 
-sys.path.insert(0, '/home/dodge/workspace/twits')
-
-from twits.src import core
+if __name__ == "__main__":
+    from twits.src import core
+    from twits.src import featurize
+else:
+    from src import core
+    from src import featurize
 
 import pandas as pd
 import numpy as np
@@ -31,19 +34,11 @@ def process_date_time(df):
 
     return df
 
-def read_csv(filename):
-    # Reading
-    start = time.time()
-    sys.stdout.write("Reading...\r")
-    df = pd.read_csv(filename)
-    print "Time to read: {:,.2f} seconds".format(time.time() - start)
-
-    return df
-
 def process_retweet_count(df):
     start = time.time()
     sys.stdout.write("Dropping bad retweet data...\r")
     df = df[df.retweet_count.apply(lambda x: "+" not in str(x))]
+    df.retweet_count = df.retweet_count.apply(int)
     print "Time to drop bad data in retweets: {:,.2f} minutes".format((time.time() - start) / 60)
 
     return df
@@ -54,6 +49,13 @@ def drop_extra_columns(df):
     """
     sys.stdout.write("Dropping extra columns...\r")
     return df.drop(core.DROP_COLUMNS, axis=1)
+
+def drop_null_rows(df):
+    """
+    EDA revealed that null rows are very uncommon, and core features always
+    have corresponding null values
+    """
+    return df.dropna()
 
 def compute_and_add_target(df):
     sys.stdout.write("Adding target, tweetability...\r")
@@ -96,21 +98,19 @@ def process_df(df):
 
     return df
 
-def process_file(filename, outfile):
+def process_file(filename):
     filename = os.path.abspath(filename)
-    outfile = os.path.abspath(outfile)
+    outfile = os.path.join(os.path.dirname(filename),
+                           "processed_" + os.path.basename(filename))
 
     if filename == outfile:
         raise ValueError("ERROR: filename and outfile are identical.")
 
-    sys.stdout.write("Reading '{}'...\r".format(filename))
-    df = read_csv(filename)
-    sys.stdout.flush()
+    df = core.read_csv(filename)
 
     df = process_df(df)
-    sys.stdout.write("Writing '{}'...\r".format(outfile))
-    with open(outfile, 'wb') as fout:
-        df.to_csv(fout, encoding="utf8")
+
+    core.to_csv(df, outfile)
 
     file_base = outfile.split(".csv")[0]
     print "Creating train and test sets..."
@@ -129,22 +129,22 @@ def write_train_and_test(fname, X_train, X_test, y_train, y_test):
     filename = fname +  "_X_train.csv"
     fout = open(filename, 'wb')
     print "Writing to '{}'...".format(filename)
-    X_train.to_csv(fout, encoding="utf8")
+    X_train.to_csv(fout, encoding="utf8", index=False)
 
     filename = fname +  "_X_test.csv"
     fout = open(filename, 'wb')
     print "Writing to '{}'...".format(filename)
-    X_test.to_csv(fout, encoding="utf8")
+    X_test.to_csv(fout, encoding="utf8", index=False)
 
     filename = fname +  "_y_train.csv"
     fout = open(filename, 'wb')
     print "Writing to '{}'...".format(filename)
-    y_train.to_csv(fout, encoding="utf8")
+    y_train.to_csv(fout, encoding="utf8", index=False)
 
     filename = fname +  "_y_test.csv"
     fout = open(filename, 'wb')
     print "Writing to '{}'...".format(filename)
-    y_test.to_csv(fout, encoding="utf8")
+    y_test.to_csv(fout, encoding="utf8", index=False)
 
 def process_train_and_test(df, outfile_basename):
     write_train_and_test(outfile_basename, *produce_train_and_test(df))
@@ -153,12 +153,18 @@ def process_train_and_test(df, outfile_basename):
 def standardize_counts(df):
     start = time.time()
     sys.stdout.write("Standardizing measures...\r")
-    minscaler = MinMaxScaler(feature_range=(-1,1))
+    minscaler = MinMaxScaler(feature_range=(0,1))
     stdscaler = StandardScaler()
+    scaler = minscaler
+
+    feats = featurize.CORE_FEATURES + [featurize.TARGET]
+
+    def _std(c):
+        return scaler.fit_transform(np.log(c + 1))
 
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore",category=DeprecationWarning)
-        df[core.CORE_FEATURES] = df[core.CORE_FEATURES].apply(lambda c: stdscaler.fit_transform(pd.to_numeric(c)))
+        df[feats] = df[feats].apply(_std)
 
     print "Time to standardize: {:,.2f} minutes".format((time.time() - start) / 60)
 
