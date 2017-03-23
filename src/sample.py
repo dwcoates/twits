@@ -15,7 +15,7 @@ from twits.src import core
 logging.basicConfig(filename="data/sample.log", level=logging.DEBUG)
 
 
-def sample_rows(filename, portion):
+def sample_rows_broken(filename, portion):
     """
     Sample a some number of rows of ``filename`` according to ``portion``,
     which is a number between 0 and 1 indicating the percentage of rows to
@@ -28,20 +28,17 @@ def sample_rows(filename, portion):
 
     return df.sample(n = num_samples).to_records()
 
-def sample_rows2(filename, portion):
+def sample_rows(df, portion):
     """
     Sample a some number of rows of ``filename`` according to ``portion``,
     which is a number between 0 and 1 indicating the percentage of rows to
-    randomly sample *without* replacement.
+   randomly sample *without* replacement.
     """
-
-    df = core.read_csv(filename)
-
     num_samples = int(len(df.index) * portion)
 
     return df.sample(n = num_samples)
 
-def sample_files(directory, output_filename, portion):
+def sample_files_broken(directory, output_filename, portion):
     """
     Return a dataframe constructed from a portion of all csv files in
     directory.
@@ -78,11 +75,12 @@ def sample_files(directory, output_filename, portion):
                 logging.error("ERROR: failure to read and sample '{}'".format(f))
     sys.stdout.write( "Done.")
 
-def sample_files2(directory, output_filename, portion):
+def sample_files(directory, output_filename, portion):
     """
     This seems to correct a write bug introduced by sample_files. My only
     concern is that it will cause memories errors for large samples, and in
     general be very slow. Oh well.
+    NOTE: interesting, doesn't seem to have slowed down process time.
     """
 
     DATA_DIR = os.path.abspath(directory)
@@ -97,7 +95,8 @@ def sample_files2(directory, output_filename, portion):
             print "Skipping '{}' for sampling.".format(f)
             continue
         try:
-            new_df = sample_rows2(os.path.join(DATA_DIR, f), portion)
+            new_df = core.read_csv(os.path.join(DATA_DIR, f))
+            new_df = sample_rows(df, portion)
             df = pd.concat([df, new_df]) if df is not None else new_df
             sys.stdout.flush()
             sys.stdout.write('{}\r'.format("\033[95mSampled from:\033[0m [{}/{}]".format(i+1, len(FILES))))
