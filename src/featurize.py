@@ -14,6 +14,8 @@ CORE_FEATURES = ["user_friends_count",
 
 TARGET = "tweetability"
 
+TWEETABILITY_PENALTY = 1
+
 # To be used for derivative features
 BASE_FEATURES = ["entities_user_mentions",
     "user_profile_text_color",
