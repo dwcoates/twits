@@ -60,23 +60,42 @@ def drop_null_rows(df):
 def compute_and_add_target(df):
     sys.stdout.write("Adding target, tweetability...\r")
 
-    return df.assign(
-        tweetability = df.apply(lambda x: int(x.retweet_count) / (x.user_followers_count + 1), axis=1))
+    df = df.assign(
+        tweetability = df.apply(lambda x: int(x.retweet_count + featurize.TWEETABILITY_PENALTY) / \
+                                (x.user_followers_count + 1), axis=1))
 
-def add_log_transforms(df):
-    """
-    Should be called last
-    """
-    sys.stdout.write("Adding log transforms...")
-    COLUMNS   = ["user_friends_count",
-                 "user_favourites_count",
-                 "user_statuses_count",
-                 "user_followers_count",
-                 "user_listed_count",
-                 "retweet_count",
-                 "tweetability"]
+    df = standardize_target(df)
 
     return df
+
+def standardize_target(df):
+    minscaler = MinMaxScaler(feature_range=(0,1))
+
+    df.target = df.target.apply(minscaler.fit_transform)
+
+    return df
+
+def standardize_counts(df):
+    df = df.copy()
+    start = time.time()
+    sys.stdout.write("Standardizing measures...\r")
+    minscaler = MinMaxScaler(feature_range=(0,1))
+    stdscaler = StandardScaler()
+    scaler = minscaler
+
+    feats = featurize.CORE_FEATURES
+
+    def _std(c):
+        return scaler.fit_transform(np.log(c + 1))
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore",category=DeprecationWarning)
+        df[feats] = df[feats].apply(_std)
+
+    print "Time to standardize: {:,.2f} minutes".format((time.time() - start) / 60)
+
+    return df
+
 
 def process_df(df):
     original_size = df.size
@@ -86,12 +105,13 @@ def process_df(df):
     df = process_date_time(df)
     df = process_retweet_count(df)
     df = drop_extra_columns(df)
+    df = standardize_counts(df)
 
     # add target
     df = compute_and_add_target(df)
 
+
     # stuff that requires target
-    df = add_log_transforms(df)
 
     print "Finished processing after {:,.2f} minutes".format((time.time() - start) / 60)
     print "DataFrame size reduced by {:.2f}%".format((1-(df.size / float(original_size)))*100)
@@ -148,24 +168,3 @@ def write_train_and_test(fname, X_train, X_test, y_train, y_test):
 
 def process_train_and_test(df, outfile_basename):
     write_train_and_test(outfile_basename, *produce_train_and_test(df))
-
-    # UNUSED
-def standardize_counts(df):
-    start = time.time()
-    sys.stdout.write("Standardizing measures...\r")
-    minscaler = MinMaxScaler(feature_range=(0,1))
-    stdscaler = StandardScaler()
-    scaler = minscaler
-
-    feats = featurize.CORE_FEATURES + [featurize.TARGET]
-
-    def _std(c):
-        return scaler.fit_transform(np.log(c + 1))
-
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore",category=DeprecationWarning)
-        df[feats] = df[feats].apply(_std)
-
-    print "Time to standardize: {:,.2f} minutes".format((time.time() - start) / 60)
-
-    return df
