@@ -10,7 +10,7 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.getcwd()))
 
-from src import core
+from twits.src import core
 
 logging.basicConfig(filename="data/sample.log", level=logging.DEBUG)
 
@@ -22,13 +22,24 @@ def sample_rows(filename, portion):
     randomly sample *without* replacement.
     """
 
-    start = time.time()
-    df = pd.read_csv(filename)
-    read_time = time.time() - start
+    df = core.read_csv(filename)
 
     num_samples = int(len(df.index) * portion)
 
     return df.sample(n = num_samples).to_records()
+
+def sample_rows2(filename, portion):
+    """
+    Sample a some number of rows of ``filename`` according to ``portion``,
+    which is a number between 0 and 1 indicating the percentage of rows to
+    randomly sample *without* replacement.
+    """
+
+    df = core.read_csv(filename)
+
+    num_samples = int(len(df.index) * portion)
+
+    return df.sample(n = num_samples)
 
 def sample_files(directory, output_filename, portion):
     """
@@ -46,8 +57,6 @@ def sample_files(directory, output_filename, portion):
         sample_writer = csv.writer(fout)
         sample_writer.writerow(core.BASE_HEADERS)
         for i, f in enumerate(FILES):
-            sys.stdout.flush()
-            sys.stdout.write('{}\r'.format("\033[95mSampling:\033[0m [{}/{}]".format(i+1, len(FILES))))
             if "csv" != f.split(".")[-1]:
                 print "Skipping '{}' for sampling.".format(f)
                 continue
@@ -59,12 +68,46 @@ def sample_files(directory, output_filename, portion):
                     else:
                         msg = "Row #{} from '{}' has {} elements. It should have {}"
                         raise ValueError(msg.format(i+1, f, len(row)-1, len(core.BASE_HEADERS)))
+                sys.stdout.flush()
+                sys.stdout.write('{}\r'.format("\033[95mSampled from:\033[0m [{}/{}]".format(i+1, len(FILES))))
             except ValueError as ex:
                 print "WARNING: {}".format(ex.message)
                 logging.warn("WARNING: {}".format(ex.message))
             except Exception as ex:
                 print "Unknown Error occured in sample_files: {}".format(ex.message)
                 logging.error("ERROR: failure to read and sample '{}'".format(f))
+    sys.stdout.write( "Done.")
+
+def sample_files2(directory, output_filename, portion):
+    """
+    This seems to correct a write bug introduced by sample_files. My only
+    concern is that it will cause memories errors for large samples, and in
+    general be very slow. Oh well.
+    """
+
+    DATA_DIR = os.path.abspath(directory)
+    FILES = os.listdir(DATA_DIR)
+    FILENAME = os.path.basename(output_filename)
+    OUTPUT_FILE = os.path.join(os.path.dirname(DATA_DIR), os.path.basename(FILENAME))
+
+    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+    df = None
+    for i, f in enumerate(FILES):
+        if "csv" != f.split(".")[-1]:
+            print "Skipping '{}' for sampling.".format(f)
+            continue
+        try:
+            new_df = sample_rows2(os.path.join(DATA_DIR, f), portion)
+            df = pd.concat([df, new_df]) if df is not None else new_df
+            sys.stdout.flush()
+            sys.stdout.write('{}\r'.format("\033[95mSampled from:\033[0m [{}/{}]".format(i+1, len(FILES))))
+        except ValueError as ex:
+            print "WARNING: {}".format(ex.message)
+            logging.warn("WARNING: {}".format(ex.message))
+        except Exception as ex:
+            print "Unknown Error occured in sample_files: {}".format(ex.message)
+            logging.error("ERROR: failure to read and sample '{}'".format(f))
+    core.to_csv(df, OUTPUT_FILE)
     sys.stdout.write( "Done.")
 
 
@@ -81,7 +124,7 @@ if __name__ == "__main__":
     PORTION = float(sys.argv[3])
 
     try:
-        sample_files(DIRECTORY, SAMPLES_FILE, PORTION)
+        sample_files2(DIRECTORY, SAMPLES_FILE, PORTION)
     except Exception as ex:
         print ("ERROR: Uncaught exception in sample_files " +
                "call. This shouldn't happen.")
