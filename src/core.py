@@ -2,6 +2,9 @@
 Core stuff
 """
 
+import sys
+import time
+
 import pandas as pd
 
 # feature csv names with corresponding json paths
@@ -52,3 +55,25 @@ CORE_FEATURES.append("tweetability") # target feature
 # convenience function
 def pp(lst):
     print pd.Series(lst)
+
+
+# use this to read
+def read_csv(filename):
+    # Reading
+    start = time.time()
+    sys.stdout.write("Reading form '{}'...\r".format(filename))
+    with open(filename, 'rU') as fout:
+        df = pd.read_csv(fout, index_col=False, encoding="utf8")
+    print "Time to read: {:,.2f} seconds".format(time.time() - start)
+    sys.stdout.flush()
+
+    return df
+
+# this to write
+def to_csv(df, filename):
+    start = time.time()
+    sys.stdout.write("Writing to '{}'...\r".format(filename))
+    with open(filename, 'wb') as fout:
+        df.to_csv(fout, encoding="utf8", index=False)
+    print "Time to write: {:,.2f} seconds".format(time.time() - start)
+    sys.stdout.flush()
