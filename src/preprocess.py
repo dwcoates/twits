@@ -14,7 +14,10 @@ import json
 import gzip
 import unicodecsv as csv
 
-from twits.src import core
+if __name__ == "__main__":
+    from twits.src import core
+else:
+    from ..src import core
 
 logging.basicConfig(filename="../data/preprocess.log", level=logging.DEBUG)
 
