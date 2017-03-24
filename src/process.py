@@ -55,7 +55,7 @@ def drop_null_rows(df):
     EDA revealed that null rows are very uncommon, and core features always
     have corresponding null values
     """
-    return df.dropna()
+    return df.dropna(subset=featurize.CORE_FEATURES)
 
 def compute_and_add_target(df):
     sys.stdout.write("Adding target, tweetability...\r")
@@ -71,7 +71,7 @@ def compute_and_add_target(df):
 def standardize_target(df):
     minscaler = MinMaxScaler(feature_range=(0,1))
 
-    df.target = df.target.apply(minscaler.fit_transform)
+    df.tweetability = minscaler.fit_transform(df.tweetability)
 
     return df
 
@@ -102,14 +102,14 @@ def process_df(df):
 
     start = time.time()
 
+    df = drop_extra_columns(df)
+    df = drop_null_rows(df)
     df = process_date_time(df)
     df = process_retweet_count(df)
-    df = drop_extra_columns(df)
     df = standardize_counts(df)
 
     # add target
     df = compute_and_add_target(df)
-
 
     # stuff that requires target
 

@@ -33,12 +33,14 @@ print f_count
 plt.hist(f_count, bins=100)
 plt.show()
 
-
-
 df = core.read_csv("data/toy_sample_tweets.csv")
+
 df = df[featurize.CORE_FEATURES]
+
 df = df.dropna()
+
 df = process.process_retweet_count(df)
+
 df = process.compute_and_add_target(df)
 
 for c in reload(process).standardize_counts(df).columns:
