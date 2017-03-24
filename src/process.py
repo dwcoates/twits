@@ -139,7 +139,10 @@ def process_file(filename):
     print "Done."
 
 def produce_train_and_test(df):
-    X_train, X_test, y_train, y_test = train_test_split(df.drop("tweetability", axis=1), df.tweetability)
+    X_train, X_test, y_train, y_test = train_test_split(
+        df.drop("tweetability", axis=1), df.tweetability)
+    y_train = pd.DataFrame(y_train, columns=[y_train.name])
+    y_test = pd.DataFrame(y_test, columns=[y_test.name])
 
     return [X_train, X_test, y_train, y_test]
 
@@ -147,24 +150,16 @@ def write_train_and_test(fname, X_train, X_test, y_train, y_test):
     print "Writing to files under '{}' prefix".format(fname)
 
     filename = fname +  "_X_train.csv"
-    fout = open(filename, 'wb')
-    print "Writing to '{}'...".format(filename)
-    X_train.to_csv(fout, encoding="utf8", index=False)
+    core.to_csv(X_train, filename)
 
     filename = fname +  "_X_test.csv"
-    fout = open(filename, 'wb')
-    print "Writing to '{}'...".format(filename)
-    X_test.to_csv(fout, encoding="utf8", index=False)
+    core.to_csv(X_test, filename)
 
     filename = fname +  "_y_train.csv"
-    fout = open(filename, 'wb')
-    print "Writing to '{}'...".format(filename)
-    y_train.to_csv(fout, encoding="utf8", index=False)
+    core.to_csv(y_train, filename)
 
     filename = fname +  "_y_test.csv"
-    fout = open(filename, 'wb')
-    print "Writing to '{}'...".format(filename)
-    y_test.to_csv(fout, encoding="utf8", index=False)
+    core.to_csv(y_test, filename)
 
 def process_train_and_test(df, outfile_basename):
     write_train_and_test(outfile_basename, *produce_train_and_test(df))
