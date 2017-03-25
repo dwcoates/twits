@@ -9,6 +9,7 @@ from datetime import datetime
 
 from src import core
 from src import featurize
+from src import text
 
 import pandas as pd
 import numpy as np
@@ -55,12 +56,14 @@ def drop_null_rows(df):
 
 def compute_and_add_target(df):
     sys.stdout.write("Adding target, tweetability...\r")
+    start = time.time()
 
     df = df.assign(
         tweetability = df.apply(lambda x: int(x.retweet_count + featurize.TWEETABILITY_PENALTY) / \
                                 (x.user_followers_count + 1), axis=1))
 
     df = standardize_target(df)
+    print "Time compute and add tweetability: {:,.2f} minutes".format((time.time() - start) / 60)
 
     return df
 
@@ -103,6 +106,7 @@ def process_df(df):
     df = process_date_time(df)
     df = process_retweet_count(df)
     df = standardize_counts(df)
+    df = text.process_text_attributes(df)
 
     # add target
     df = compute_and_add_target(df)

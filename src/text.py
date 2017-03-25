@@ -4,6 +4,7 @@ import os
 from time import time
 import sys
 import warnings
+import threading
 
 import pandas as pd
 import numpy as np
@@ -83,20 +84,62 @@ def compute_hashtag_freq(hashtags, freq):
     return hashtags.apply(lambda x: np.mean([freq[m] for m in x]))
 
 def process_text_attributes(df):
-    words = df.text.apply(word_tokenize)
+    start = time()
+    sys.stdout.write("Tokenizing text words...\r")
+    threads = []
+    num_threads = 8
+    words = [None] * num_threads
+    texts = np.array_split(df.text, num_threads)
+    for i in range(num_threads):
+        def process_tokens():
+            words[i] = texts[i].apply(word_tokenize)
+        t = threading.Thread(target=process_tokens)
+        threads.append(t)
+        t.start()
+    for t in threads:
+        t.join()
+    words = pd.concat(words)
+    # single-threaded version:
+    ### words = df.text.apply(word_tokenize)
+    print "Time to tokenize: {:,.2f} minutes".format(
+        (time() - start) / 60)
+
+    start = time()
+    sys.stdout.write("Tallying word frequencies...\r")
     freqs = get_text_word_freqs(df, words)
+    print "Time to text tally frequencies: {:,.2f} ".format(
+        (time() - start) / 60)
+
+    start = time()
+    sys.stdout.write("Computing text word diversity...\r")
     df["text_diversity"] = compute_word_diversities(df, freqs)
     df["word_count"] = compute_word_count(words)
+    print "Time to compute text word diversity: {:,.2f} minutes".format(
+        (time() - start) / 60)
 
+    start = time()
+    sys.stdout.write("Parsing hashtags and user_mentions...\r")
     hashtags = get_hashtags(df)
     user_mentions = get_user_mentions(df)
+    print "Time to parse hashtags and mentions: {:,.2f} minutes".format(
+        (time() - start) / 60)
+
+    start = time()
+    sys.stdout.write("Tallying hashtags and user_mentions freqencies...\r")
     hashtag_freqs = get_hashtag_freqs(hashtags)
     user_mention_freqs = get_user_mention_freqs(user_mentions)
+    print "Time to tally hashtag and mention frequencies: {:,.2f} minutes".format(
+        (time() - start) / 60)
 
+    start = time()
+    sys.stdout.write(
+        "Computing hashtag and user_mentions diversity...\r")
     df["hashtag_count"] = hashtags.apply(len)
     df["user_mentions_count"] = user_mentions.apply(len)
     df["user_hashtag_freq"] = compute_hashtag_info(hashtags, hashtag_freqs)
     df["user_mention_freq"] = compute_user_mention_info(user_mentions,
                                                         user_mention_freqs)
+    print "Time to computer hashtag and mention diversity: {:,.2f} minutes".format(
+        (time() - start) / 60)
 
     return df.drop(["entities_hashtags", "entities_user_mentions"], axis=1)

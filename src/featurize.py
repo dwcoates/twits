@@ -13,6 +13,11 @@ FEATURES = ["user_friends_count",
                  "user_statuses_count"]
 TARGET_FEATURES = ["user_followers_count", "retweet_count"]
 CORE_FEATURES = FEATURES + TARGET_FEATURES
+DERIVED_FEATURES = ["hashtag_count",
+                    "user_mentions_count",
+                    "user_hashtag_freq",
+                    "user_mention_freq",
+                    "text_diversity"]
 
 TARGET = "tweetability"
 
