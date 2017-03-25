@@ -22,7 +22,6 @@ else:
 
 logging.basicConfig(filename="../data/preprocess.log", level=logging.DEBUG)
 
-
 def read_json(filename, gz=None):
     """
     Read in comma-newline delimited json files encoded in latin-1.
@@ -47,9 +46,9 @@ def read_json(filename, gz=None):
                 encode_fails += 1
             except Exception:
                 print "JSON OBJECT FAILED:".format(i)
-        print "FAILURE_RATE: [{0}/{1}] ({2:.2f}%)".format(encode_fails,
-                                                          len(json_lines),
-                                                          100*(encode_fails/float(len(json_lines))))
+        # sys.stdout.write("FAILURE_RATE: [{0}/{1}] ({2:.2f}%)".format(encode_fails,
+        #                                                   len(json_lines),
+        #                                                   100*(encode_fails/float(len(json_lines)))))
 
     return data
 
@@ -59,11 +58,20 @@ def csvify_json_obj(jobj):
     """
     return [p(jobj) for p in core.BASE_PATHS]
 
-def process_json(filename, output_filename, gz=False):
+def progress_bar(value=0, endvalue=1, bar_length=50):
+    percent = float(value) / endvalue
+    arrow = '#' * int(round(percent * bar_length)-1) + '>'
+    spaces = '_' * (bar_length - len(arrow))
+
+    sys.stdout.write(
+        "Percent: [{0}] {1:.2f}% | [{2:,}/{3:,}]\r".format(arrow + spaces,
+                                                       percent  * 100, value, endvalue))
+    sys.stdout.flush()
+
+def process_json(filename, output_filename, gz=False, i=0, n=1):
     """
     Process json.
     """
-
     props = ["total_fails",
              "total_parses",
              "english_count",
@@ -73,12 +81,13 @@ def process_json(filename, output_filename, gz=False):
 
     logging.info("Reading '{}'...".format(filename))
 
+    print "Reading and processing '{}'...\r".format(filename)
+    progress_bar(i, n)
     with open(output_filename, 'wb') as fout:
         tweet_writer = csv.writer(fout)
         tweet_writer.writerow(core.BASE_HEADERS) # csv header
-        print "Reading '{}'...".format(filename)
         js = read_json(filename, gz=gz)
-        print "Processing...".format(filename)
+        # print "Processing..."
         for i, j in enumerate(js):
             if "delete" in j:
                 continue # ignore deletes for now
@@ -108,13 +117,14 @@ def process_json(filename, output_filename, gz=False):
                 print "ERROR: Unexpected exception."
                 logging.error("Other exception: {}".format(ex.message))
 
-    print "Done."
     logging.info("Finished reading '{}'...".format(filename))
 
 
 # Script
 if __name__ == "__main__":
     from random import choice
+
+    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
     if len(sys.argv) < 3:
         raise ValueError(
@@ -127,7 +137,8 @@ if __name__ == "__main__":
     TEST_LIMIT = int(sys.argv[3]) if len(sys.argv) >= 4 else None
 
     # be careful to not delete stuff that shouldn't be deleted
-    print "Delete all files in '{}' directory?".format(
+    print "Delete all ***{:,}*** files in '{}' directory?".format(
+        len(os.listdir(os.path.abspath(DEST_PATH))),
         os.path.abspath(DEST_PATH))
     INPUT = raw_input("yes or no> ")
     if INPUT != "yes":
@@ -152,20 +163,16 @@ if __name__ == "__main__":
     for i, f in enumerate(dirs):
         f_comps = f.split(".")
         if "json" in f_comps:
-            print "\n[{}/{}]".format(i+1, len(dirs))
             logging.info("\n[{}]:".format(i+1))
             try:
                 process_json(os.path.join(DATA_PATH, f),
                              os.path.join(DEST_PATH, f_comps[0]+".csv"),
-                             gz="gz" in f_comps)
+                             gz="gz" in f_comps, i=i+1, n=len(dirs))
                 file_count += 1
             except Exception as ex:
 
                 logging.error(ex.message)
-                print ("ERROR: Failed to processes" +
-                       " '{}' in '{}' to '{}'.").format(f,
-                                                        DATA_PATH,
-                                                        DEST_PATH)
+                print ex.message
         else:
             print "'{}' has been skipped for processing.".format(f)
 

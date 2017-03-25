@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 import os
 import time
 import unicodecsv as csv
@@ -49,7 +48,7 @@ def sample_files_broken(directory, output_filename, portion):
     FILENAME = os.path.basename(output_filename)
     OUTPUT_FILE = os.path.join(os.path.dirname(DATA_DIR), os.path.basename(FILENAME))
 
-    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+    #sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
     with open(OUTPUT_FILE, 'wb') as fout:
         sample_writer = csv.writer(fout)
         sample_writer.writerow(core.BASE_HEADERS)

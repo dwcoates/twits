@@ -7,12 +7,8 @@ import time
 import warnings
 from datetime import datetime
 
-if __name__ == "__main__":
-    from twits.src import core
-    from twits.src import featurize
-else:
-    from src import core
-    from src import featurize
+from twits.src import core
+from twits.src import featurize
 
 import pandas as pd
 import numpy as np
@@ -73,7 +69,7 @@ def standardize_target(df):
 
     df.tweetability = minscaler.fit_transform(df.tweetability)
 
-    return df
+    return df.drop(featurize.TARGET_FEATURES, axis=1)
 
 def standardize_counts(df):
     df = df.copy()
@@ -83,7 +79,7 @@ def standardize_counts(df):
     stdscaler = StandardScaler()
     scaler = minscaler
 
-    feats = featurize.CORE_FEATURES
+    feats = featurize.FEATURES
 
     def _std(c):
         return scaler.fit_transform(np.log(c + 1))
@@ -112,7 +108,6 @@ def process_df(df):
     df = compute_and_add_target(df)
 
     # stuff that requires target
-
     print "Finished processing after {:,.2f} minutes".format((time.time() - start) / 60)
     print "DataFrame size reduced by {:.2f}%".format((1-(df.size / float(original_size)))*100)
 
@@ -160,6 +155,7 @@ def write_train_and_test(fname, X_train, X_test, y_train, y_test):
 
     filename = fname +  "_y_test.csv"
     core.to_csv(y_test, filename)
+
 
 def process_train_and_test(df, outfile_basename):
     write_train_and_test(outfile_basename, *produce_train_and_test(df))
