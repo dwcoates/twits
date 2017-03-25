@@ -47,16 +47,18 @@ def compute_word_count(words):
     return words.apply(len)
 
 def get_hashtags(df):
-    return df.entities_hashtags.apply(ast.literal_eval)
+    tags = df.entities_hashtags.apply(ast.literal_eval)
+    return tags.apply(lambda tg: [t["text"] for t in tg])
 
 def get_user_mentions(df):
-    return df.entities_user_mentions.apply(ast.literal_eval)
+    mentions = df.entities_user_mentions.apply(ast.literal_eval)
+    return mentions.apply(lambda tg: [t["screen_name"] for t in tg])
 
 def compute_hashtag_info(tags, freqs):
-    return [freqs[t] for t in tags] / len(tags)
+    return tags.apply(lambda tgs: np.mean([freqs[t] for t in tgs]))
 
 def compute_user_mention_info(tags, freqs):
-    return [freqs[t] for t in tags] / len(tags)
+    return tags.apply(lambda tgs: np.mean([freqs[t] for t in tgs]))
 
 def get_hashtag_freqs(hashtags):
     tags = itertools.chain(*hashtags)
@@ -64,7 +66,7 @@ def get_hashtag_freqs(hashtags):
     for t in tags:
         d[t] += 1
 
-    return sum(d.values())/len(d.keys())
+    return d
 
 def get_user_mention_freqs(user_mentions):
     tags = itertools.chain(*user_mentions)
@@ -75,12 +77,12 @@ def get_user_mention_freqs(user_mentions):
     return d
 
 def compute_user_mention_freq(user_mentions, freq):
-    return user_mentions.apply(lambda x: sum([freq[m] for m in x])/len(x))
+    return user_mentions.apply(lambda x: np.mean([freq[m] for m in x]))
 
 def compute_hashtag_freq(hashtags, freq):
-    return hashtags.apply(lambda x: sum([freq[m] for m in x])/len(x))
+    return hashtags.apply(lambda x: np.mean([freq[m] for m in x]))
 
-def process_text_attribute(df):
+def process_text_attributes(df):
     words = df.text.apply(word_tokenize)
     freqs = get_text_word_freqs(df, words)
     df["text_diversity"] = compute_word_diversities(df, freqs)
@@ -93,8 +95,8 @@ def process_text_attribute(df):
 
     df["hashtag_count"] = hashtags.apply(len)
     df["user_mentions_count"] = user_mentions.apply(len)
+    df["user_hashtag_freq"] = compute_hashtag_info(hashtags, hashtag_freqs)
+    df["user_mention_freq"] = compute_user_mention_info(user_mentions,
+                                                        user_mention_freqs)
 
-    hash_freqs = get_hashtag_freqs(df.entities_hashtags)
-    user_mention_freqs = get_user_mention_freqs(df.user_mentions)
-    df["user_hashtag_freq"] = compute_hashtag_freq(df.entities_user_mentions, freqs)
-    df["user_mention_freq"] = compute_hashtag_freq(df.entities_user_mentions, freqs)
+    return df.drop(["entities_hashtags", "entities_user_mentions"], axis=1)

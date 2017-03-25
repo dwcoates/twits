@@ -7,8 +7,8 @@ import time
 import warnings
 from datetime import datetime
 
-from twits.src import core
-from twits.src import featurize
+from src import core
+from src import featurize
 
 import pandas as pd
 import numpy as np
