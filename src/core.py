@@ -32,8 +32,7 @@ BASE_FEATURES = [("id_str",                    lambda d: d["id_str"]),
 BASE_HEADERS = zip(*BASE_FEATURES)[0]
 BASE_PATHS   = zip(*BASE_FEATURES)[1]
 
-DROP_COLUMNS = ["created_at.1",
-                "user_lang",
+DROP_COLUMNS = ["user_lang",
                 "user_notifications",
                 "user_verified",
                 "user_following",
