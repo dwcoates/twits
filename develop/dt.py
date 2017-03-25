@@ -23,10 +23,12 @@ y_test = core.read_csv("data/processed_toy_sample_tweets_y_test.csv")
 #
 # off the cuff feature dropping
 #
-X_train = X_train[featurize.CORE_FEATURES]
-X_test = X_test[featurize.CORE_FEATURES]
+X_train = X_train[featurize.FEATURES]
+X_test = X_test[featurize.FEATURES]
 
-
+#
+# Simple Decision Tree Regressor
+#
 clf = tree.DecisionTreeRegressor()
 start = time.time()
 print "Fitting decision tree..."
@@ -34,6 +36,11 @@ clf.fit(X_train, y_train)
 print "Time to fit dt: {} minutes".format((start - time.time()) / 60)
 
 outfile = tree.export_graphviz(clf, out_file='filename.dot',
-                               feature_names=X.columns)
+                               feature_names=X_train.columns)
 
-outfile.close()
+#
+# Random Forest Regressor
+#
+from sklearn.ensemble import RandomForestRegressor
+forest = RandomForestRegressor(n_estimators=1000, random_state=0, n_jobs=4)
+forest.fit(X_train, y_train)
