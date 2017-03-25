@@ -6,11 +6,13 @@ sys.path.insert(0, os.path.dirname(os.getcwd()))
 # see features summary in org file
 
 # Core features that may or may not need scaling
-CORE_FEATURES = ["user_friends_count",
-     "user_favourites_count",
-     "user_statuses_count",
-     "user_followers_count",
-     "retweet_count"]
+
+
+FEATURES = ["user_friends_count",
+                 "user_favourites_count",
+                 "user_statuses_count"]
+TARGET_FEATURES = ["user_followers_count", "retweet_count"]
+CORE_FEATURES = FEATURES + TARGET_FEATURES
 
 TARGET = "tweetability"
 
