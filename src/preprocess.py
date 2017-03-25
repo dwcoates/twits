@@ -15,7 +15,8 @@ import gzip
 import unicodecsv as csv
 
 if __name__ == "__main__":
-    from twits.src import core
+    #from twits.src import core
+    import core
 else:
     from ..src import core
 
