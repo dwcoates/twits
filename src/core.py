@@ -9,16 +9,13 @@ import pandas as pd
 
 # feature csv names with corresponding json paths
 BASE_FEATURES = [("id_str",                    lambda d: d["id_str"]),
-                     ("retweeted",                 lambda d: d["retweeted"]),
                      ("created_at",                lambda d: d["created_at"]),
                      ("user_id_str",               lambda d: d["user"]["id_str"]),
                      ("user_friends_count",        lambda d: d["user"]["friends_count"]),
-                     ("user_lang",                 lambda d: d["user"]["lang"]),
                      ("user_profile_text_color",   lambda d: d["user"]["profile_text_color"]),
                      ("user_favourites_count",     lambda d: d["user"]["favourites_count"]),
                      ("user_description",          lambda d: d["user"]["description"]),
                      ("user_statuses_count",       lambda d: d["user"]["statuses_count"]),
-                     ("user_contributors_enabled", lambda d: d["user"]["contributors_enabled"]),
                      ("user_followers_count",      lambda d: d["user"]["followers_count"]),
                      ("user_screen_name",          lambda d: d["user"]["screen_name"]),
                      ("user_verified",             lambda d: d["user"]["verified"]),
@@ -29,12 +26,9 @@ BASE_FEATURES = [("id_str",                    lambda d: d["id_str"]),
                      ("user_following",            lambda d: d["user"]["following"]),
                      ("retweet_count",             lambda d: d["retweet_count"]),
                      ("text",                      lambda d: d["text"]),
-                     ("entities_hashtags",         lambda d: d["entities"]["hashtags"]),
-                     ("entities_urls",             lambda d: d["entities"]["urls"]),
-                     ("entities_user_mentions",    lambda d: d["entities"]["user_mentions"]),
-                     ("favorited",                 lambda d: d["favorited"]),
-                     ("created_at",                lambda d: d["created_at"]),
-                     ("contributors",              lambda d: d["contributors"])]
+                     ("entities_hashtags",         lambda d: [j["text"] for j in d["entities"]["hashtags"]]),
+                     ("entities_user_mentions",    lambda d: [j["screen_name"] for j in d["entities"]["user_mentions"]]),
+                     ("favorited",                 lambda d: d["favorited"])]
 BASE_HEADERS = zip(*BASE_FEATURES)[0]
 BASE_PATHS   = zip(*BASE_FEATURES)[1]
 
