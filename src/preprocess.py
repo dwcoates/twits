@@ -16,9 +16,9 @@ import unicodecsv as csv
 
 if __name__ == "__main__":
     #from twits.src import core
-    import core
+    from twits.src import core
 else:
-    from ..src import core
+    from src import core
 
 logging.basicConfig(filename="../data/preprocess.log", level=logging.DEBUG)
 

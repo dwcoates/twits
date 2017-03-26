@@ -27,16 +27,6 @@ def sample_rows_broken(filename, portion):
 
     return df.sample(n = num_samples).to_records()
 
-def sample_rows(df, portion):
-    """
-    Sample a some number of rows of ``filename`` according to ``portion``,
-    which is a number between 0 and 1 indicating the percentage of rows to
-   randomly sample *without* replacement.
-    """
-    num_samples = int(len(df.index) * portion)
-
-    return df.sample(n = num_samples)
-
 def sample_files_broken(directory, output_filename, portion):
     """
     Return a dataframe constructed from a portion of all csv files in
@@ -74,6 +64,17 @@ def sample_files_broken(directory, output_filename, portion):
                 logging.error("ERROR: failure to read and sample '{}'".format(f))
     sys.stdout.write( "Done.")
 
+def sample_rows(df, portion):
+    """
+    Sample a some number of rows of ``filename`` according to ``portion``,
+    which is a number between 0 and 1 indicating the percentage of rows to
+   randomly sample *without* replacement.
+    """
+    num_samples = int(len(df.index) * portion)
+
+    return df.sample(n = num_samples)
+
+
 def sample_files(directory, output_filename, portion):
     """
     This seems to correct a write bug introduced by sample_files. My only
@@ -95,7 +96,7 @@ def sample_files(directory, output_filename, portion):
             continue
         try:
             new_df = core.read_csv(os.path.join(DATA_DIR, f))
-            new_df = sample_rows(df, portion)
+            new_df = sample_rows(new_df, portion)
             df = pd.concat([df, new_df]) if df is not None else new_df
             sys.stdout.flush()
             sys.stdout.write('{}\r'.format("\033[95mSampled from:\033[0m [{}/{}]".format(i+1, len(FILES))))
@@ -122,9 +123,9 @@ if __name__ == "__main__":
     PORTION = float(sys.argv[3])
 
     try:
-        sample_files2(DIRECTORY, SAMPLES_FILE, PORTION)
+        sample_files(DIRECTORY, SAMPLES_FILE, PORTION)
     except Exception as ex:
         print ("ERROR: Uncaught exception in sample_files " +
-               "call. This shouldn't happen.")
+               "call. This shouldn't happen: {}".format(ex.message))
         logging.error( ("ERROR: Uncaught exception " +
                         "in sample_files call: {}").format(ex.message))
