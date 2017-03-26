@@ -13,6 +13,9 @@ from src import process
 import pandas as pd
 
 from sklearn.metrics import accuracy_score, log_loss
+from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import GaussianNB
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 
 # this rU flag is some fix I found at https://github.com/pandas-dev/pandas/issues/11166
 df = core.read_csv("data/processed_toy_sample_tweets.csv")
@@ -46,3 +49,24 @@ outfile = tree.export_graphviz(clf, out_file='filename.dot',
 from sklearn.ensemble import RandomForestClassifier
 forest = RandomForestClassifier(n_estimators=1000, random_state=0, n_jobs=4)
 forest.fit(X_train, y_train)
+
+clf1 = LogisticRegression(random_state=1)
+clf2 = RandomForestClassifier(random_state=1)
+clf3 = GaussianNB()
+
+eclf1 = VotingClassifier(estimators=[
+        ('lr', clf1), ('rf', clf2), ('gnb', clf3)], voting='hard')
+eclf1 = eclf1.fit(X_train, y_train)
+pred1 = eclf1.predict(X_test)
+
+eclf2 = VotingClassifier(estimators=[
+        ('lr', clf1), ('rf', clf2), ('gnb', clf3)],
+        voting='soft')
+eclf2 = eclf2.fit(X_train, y_train)
+pred2 = eclf2.predict(X_test)
+
+eclf3 = VotingClassifier(estimators=[
+       ('lr', clf1), ('rf', clf2), ('gnb', clf3)],
+       voting='soft', weights=[2,1,1])
+eclf3 = eclf3.fit(X_train, y_train)
+pred3 = eclf3.predict(X_test)
