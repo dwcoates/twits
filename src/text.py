@@ -45,6 +45,31 @@ def compute_word_diversities(df, freqs):
 def compute_word_count(words):
     return words.apply(len)
 
+def compute_punctuation_usage(words):
+    """
+    Very stupid 'algorithm' for describing punctuation usage
+    """
+    def contains(v, p):
+        for _p in p:
+            if _p in v:
+                return True
+        return False
+
+    good_punct = [",", ";", "'"]
+    sorta_good_punct = [",", "."]
+    sorta_bad_punct = ["!", "?"]
+
+    v = 1
+
+    if contains(words, good_punct):
+        v *= 1.4
+    if contains(words, sorta_good_punct):
+        v *= 1.1
+    if contains(words, sorta_bad_punct):
+        v *= 0.85
+
+    return v
+
 def get_hashtags(df):
     tags = df.entities_hashtags.apply(ast.literal_eval)
     return tags.apply(lambda tg: [t["text"] for t in tg])
@@ -127,6 +152,12 @@ def process_text_attributes(df):
     hashtag_freqs = get_hashtag_freqs(hashtags)
     user_mention_freqs = get_user_mention_freqs(user_mentions)
     print "Time to tally hashtag and mention frequencies: {:,.2f} minutes".format(
+        (time() - start) / 60)
+
+    start = time()
+    sys.stdout.write("Computing punctuation usage...\r")
+    df["punctuation_score"] = compute_punctuation_usage(words)
+    print "Time to compute punctuation usage: {:,.2f} minutes".format(
         (time() - start) / 60)
 
     start = time()
