@@ -37,10 +37,8 @@ def compute_word_diversities(df, freqs):
         """
         Get average word popularity for the given message
         """
-        if len(ws) != 0:
-            return sum([freqs[w] for w in ws]) / len(ws)
-        else:
-            return 0
+        avg = np.mean([freqs[w] for w in ws])
+        return avg if avg is not np.nan else 0
 
     return df.text.apply(word_diversity)
 
@@ -56,10 +54,10 @@ def get_user_mentions(df):
     return mentions.apply(lambda tg: [t["screen_name"] for t in tg])
 
 def compute_hashtag_info(tags, freqs):
-    return tags.apply(lambda tgs: np.mean([freqs[t] for t in tgs]))
+    return tags.apply(lambda tgs: np.mean([freqs[t] for t in tgs])).fillna(0)
 
 def compute_user_mention_info(tags, freqs):
-    return tags.apply(lambda tgs: np.mean([freqs[t] for t in tgs]))
+    return tags.apply(lambda tgs: np.mean([freqs[t] for t in tgs])).fillna(0)
 
 def get_hashtag_freqs(hashtags):
     tags = itertools.chain(*hashtags)

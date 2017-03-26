@@ -12,6 +12,8 @@ from src import process
 
 import pandas as pd
 
+from sklearn.metrics import accuracy_score, log_loss
+
 # this rU flag is some fix I found at https://github.com/pandas-dev/pandas/issues/11166
 df = core.read_csv("data/processed_toy_sample_tweets.csv")
 
@@ -29,7 +31,7 @@ X_test = X_test[featurize.FEATURES]
 #
 # Simple Decision Tree Regressor
 #
-clf = tree.DecisionTreeRegressor()
+clf = tree.DecisionTreeClassifier()
 start = time.time()
 print "Fitting decision tree..."
 clf.fit(X_train, y_train)
@@ -41,6 +43,6 @@ outfile = tree.export_graphviz(clf, out_file='filename.dot',
 #
 # Random Forest Regressor
 #
-from sklearn.ensemble import RandomForestRegressor
-forest = RandomForestRegressor(n_estimators=1000, random_state=0, n_jobs=4)
+from sklearn.ensemble import RandomForestClassifier
+forest = RandomForestClassifier(n_estimators=1000, random_state=0, n_jobs=4)
 forest.fit(X_train, y_train)

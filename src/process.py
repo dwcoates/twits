@@ -17,19 +17,22 @@ import numpy as np
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import train_test_split
 
+np.set_printoptions(suppress=True)
+
 def process_date_time(df):
     def parse(ts):
         ret = ts.split(" ")
         ret.pop(4)
         return datetime.strptime(" ".join(ret), '%a %b %d %X %Y')
 
-
     start = time.time()
     sys.stdout.write("Converting to datetime...\r")
     df.created_at = df.created_at.apply(parse)
+    df["day"] = df.created_at.apply(lambda x: x.day)
+    df["hour"] = df.created_at.apply(lambda x: x.hour)
     print "Time to process dates: {:,.2f} minutes".format((time.time() - start) / 60)
 
-    return df
+    return df.drop('created_at', axis=1)
 
 def process_retweet_count(df):
     start = time.time()
@@ -62,17 +65,33 @@ def compute_and_add_target(df):
         tweetability = df.apply(lambda x: int(x.retweet_count + featurize.TWEETABILITY_PENALTY) / \
                                 (x.user_followers_count + 1), axis=1))
 
+    df = df.assign(
+        tweetability_metric = df.apply(lambda x: int(x.retweet_count + featurize.TWEETABILITY_PENALTY) / \
+                                (x.user_followers_count + 1), axis=1))
+
     df = standardize_target(df)
     print "Time compute and add tweetability: {:,.2f} minutes".format((time.time() - start) / 60)
+
 
     return df
 
 def standardize_target(df):
     minscaler = MinMaxScaler(feature_range=(0,1))
 
-    df.tweetability = minscaler.fit_transform(df.tweetability)
+    # df.tweetability = minscaler.fit_transform(df.tweetability)
 
-    return df.drop(featurize.TARGET_FEATURES, axis=1)
+    def label(v):
+        if v < 0.0034:
+            return "low"
+        if v < 0.0102:
+            return "medium"
+        return "high"
+
+    df.tweetability = df.tweetability.apply(label)
+
+    #df = df.drop(featurize.TARGET_FEATURES, axis=1)
+
+    return df
 
 def standardize_counts(df):
     df = df.copy()
@@ -82,7 +101,7 @@ def standardize_counts(df):
     stdscaler = StandardScaler()
     scaler = minscaler
 
-    feats = featurize.FEATURES
+    feats = featurize.BASE_FEATURES
 
     def _std(c):
         return scaler.fit_transform(np.log(c + 1))
