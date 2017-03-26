@@ -26,6 +26,12 @@ BASE_FEATURES = [("id_str",                    lambda d: d["id_str"]),
                      ("user_following",            lambda d: d["user"]["following"]),
                      ("retweet_count",             lambda d: d["retweet_count"]),
                      ("text",                      lambda d: d["text"]),
+                     ("retweeted",                 lambda d: d["retweeted"]),
+                     ("in_reply_to_status_id",     lambda d: d["in_reply_to_status_id"]),
+                     ("in_reply_to_status_id_str", lambda d: d["in_reply_to_status_id_str"]),
+                     ("in_reply_to_user_id_str",   lambda d: d["in_reply_to_user_id_str"]),
+                     ("in_reply_to_screen_name",   lambda d: d["in_reply_to_screen_name"]),
+                     ("in_reply_to_user_id",       lambda d: d["in_reply_to_user_id"]),
                      ("entities_hashtags",         lambda d: [j["text"] for j in d["entities"]["hashtags"]]),
                      ("entities_user_mentions",    lambda d: [j["screen_name"] for j in d["entities"]["user_mentions"]]),
                      ("favorited",                 lambda d: d["favorited"])]
@@ -51,14 +57,16 @@ def pp(lst):
 
 
 # use this to read
-def read_csv(filename):
+def read_csv(filename, suppress_msg=False):
     # Reading
     start = time.time()
-    sys.stdout.write("Reading form '{}'...\r".format(filename))
+    if not suppress_msg:
+        sys.stdout.write("Reading form '{}'...\r".format(filename))
     with open(filename, 'rU') as fout:
         df = pd.read_csv(fout, index_col=False, encoding="utf8")
-    print "Time to read: {:,.2f} seconds".format(time.time() - start)
-    sys.stdout.flush()
+    if not suppress_msg:
+        print "Time to read: {:,.2f} seconds".format(time.time() - start)
+        sys.stdout.flush()
 
     return df
 

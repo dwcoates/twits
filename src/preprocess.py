@@ -16,7 +16,7 @@ import unicodecsv as csv
 
 if __name__ == "__main__":
     #from twits.src import core
-    from twits.src import core
+    import core
 else:
     from src import core
 
@@ -68,7 +68,7 @@ def progress_bar(value=0, endvalue=1, bar_length=50):
                                                        percent  * 100, value, endvalue))
     sys.stdout.flush()
 
-def process_json(filename, output_filename, gz=False, i=0, n=1):
+def process_json(filename, output_filename, gz=False, i=0, n=1, f_num=False):
     """
     Process json.
     """
@@ -81,7 +81,8 @@ def process_json(filename, output_filename, gz=False, i=0, n=1):
 
     logging.info("Reading '{}'...".format(filename))
 
-    print "Reading and processing '{}'...\r".format(filename)
+    fnum_str = "File #{}:".format(f_num) if f_num else ""
+    print "{}Reading and processing '{}'...\r".format(fnum_str, filename)
     progress_bar(i, n)
     with open(output_filename, 'wb') as fout:
         tweet_writer = csv.writer(fout)
@@ -122,7 +123,7 @@ def process_json(filename, output_filename, gz=False, i=0, n=1):
 
 # Script
 if __name__ == "__main__":
-    from random import choice
+    from random import choice, shuffle
 
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
@@ -159,6 +160,13 @@ if __name__ == "__main__":
     if TEST_LIMIT:
         dirs = [choice(dirs) for _ in xrange(TEST_LIMIT)]
 
+    print "Randomizing dirs..."
+    VERIFY = dict(zip(dirs, range(len(dirs))))
+    shuffle(dirs)
+
+    # I suppse this can fail for a small directory
+    assert VERIFY.keys() != dirs, VERIFY.keys() == set(dirs)
+
     file_count = 0
     for i, f in enumerate(dirs):
         f_comps = f.split(".")
@@ -167,7 +175,7 @@ if __name__ == "__main__":
             try:
                 process_json(os.path.join(DATA_PATH, f),
                              os.path.join(DEST_PATH, f_comps[0]+".csv"),
-                             gz="gz" in f_comps, i=i+1, n=len(dirs))
+                             gz="gz" in f_comps, i=i+1, n=len(dirs), f_num=VERIFY[f])
                 file_count += 1
             except Exception as ex:
 

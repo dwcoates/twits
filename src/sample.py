@@ -64,6 +64,16 @@ def sample_files_broken(directory, output_filename, portion):
                 logging.error("ERROR: failure to read and sample '{}'".format(f))
     sys.stdout.write( "Done.")
 
+def progress_bar(value=0, endvalue=1, bar_length=50):
+    percent = float(value) / endvalue
+    arrow = '#' * int(round(percent * bar_length)-1) + '>'
+    spaces = '_' * (bar_length - len(arrow))
+
+    sys.stdout.write(
+        "Percent: [{0}] {1:.2f}% | [{2:,}/{3:,}]\r".format(arrow + spaces,
+                                                       percent  * 100, value, endvalue))
+    sys.stdout.flush()
+
 def sample_rows(df, portion):
     """
     Sample a some number of rows of ``filename`` according to ``portion``,
@@ -91,11 +101,12 @@ def sample_files(directory, output_filename, portion):
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
     df = None
     for i, f in enumerate(FILES):
+        progress_bar(i, len(FILES))
         if "csv" != f.split(".")[-1]:
             print "Skipping '{}' for sampling.".format(f)
             continue
         try:
-            new_df = core.read_csv(os.path.join(DATA_DIR, f))
+            new_df = core.read_csv(os.path.join(DATA_DIR, f), suppress_msg=True)
             new_df = sample_rows(new_df, portion)
             df = pd.concat([df, new_df]) if df is not None else new_df
             sys.stdout.flush()
@@ -127,5 +138,8 @@ if __name__ == "__main__":
     except Exception as ex:
         print ("ERROR: Uncaught exception in sample_files " +
                "call. This shouldn't happen: {}".format(ex.message))
+        print DIRECTORY
+        print SAMPLES_FILE
+        print PORTION
         logging.error( ("ERROR: Uncaught exception " +
                         "in sample_files call: {}").format(ex.message))
