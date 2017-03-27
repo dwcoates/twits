@@ -14,10 +14,14 @@ from src import text
 import pandas as pd
 import numpy as np
 
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder
 from sklearn.model_selection import train_test_split
 
+target_encoder = LabelEncoder()
+
 np.set_printoptions(suppress=True)
+
+
 
 def process_date_time(df):
     def parse(ts):
@@ -76,18 +80,28 @@ def compute_and_add_target(df):
     return df
 
 def standardize_target(df):
+    global target_encoder
+
+    from sklearn.clustering import KMeans
     minscaler = MinMaxScaler(feature_range=(0,1))
 
-    # df.tweetability = minscaler.fit_transform(df.tweetability)
+    scaled_tweetability = StandardScaler().fit_transform(np.log(
+        df.tweetability + 1))
+    target_classified = KMeans(n_clusters=3, random_state=0).fit(
+        scaled_tweetability.reshape(-1, 1))
+    def stringify(v):
+        if v == 0:
+            return "Low"
+        elif v == 1:
+            return "Medium"
+        elif v == 2:
+            return "High"
+        raise ValueError("Unexpected tweetability partition: {}".format(v))
+    target = map(stringify, target_classified.labels_)
 
-    def label(v):
-        if v < 0.0034:
-            return "low"
-        if v < 0.0102:
-            return "medium"
-        return "high"
-
-    df.tweetability = df.tweetability.apply(label)
+    target_encoder.fit(target)
+    df.tweetability = df.tweetability.apply(
+        target_encoder.transform(target))
 
     #df = df.drop(featurize.TARGET_FEATURES, axis=1)
 
