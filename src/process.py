@@ -76,17 +76,15 @@ def compute_and_add_target(df):
     df = standardize_target(df)
     print "Time compute and add tweetability: {:,.2f} seconds".format(time.time() - start)
 
-
     return df
 
 def standardize_target(df):
     global target_encoder
 
-    from sklearn.clustering import KMeans
-    minscaler = MinMaxScaler(feature_range=(0,1))
+    from sklearn.cluster import KMeans
 
-    scaled_tweetability = StandardScaler().fit_transform(np.log(
-        df.tweetability + 1))
+    scaled_tweetability = pd.Series(StandardScaler().fit_transform(np.log(
+        df.tweetability + 1)))
     target_classified = KMeans(n_clusters=3, random_state=0).fit(
         scaled_tweetability.reshape(-1, 1))
     def stringify(v):
@@ -97,11 +95,11 @@ def standardize_target(df):
         elif v == 2:
             return "High"
         raise ValueError("Unexpected tweetability partition: {}".format(v))
+
     target = map(stringify, target_classified.labels_)
 
     target_encoder.fit(target)
-    df.tweetability = df.tweetability.apply(
-        target_encoder.transform(target))
+    df.tweetability =  target_encoder.transform(target)
 
     #df = df.drop(featurize.TARGET_FEATURES, axis=1)
 
