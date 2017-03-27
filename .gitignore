@@ -4,3 +4,4 @@ data/csv/
 *~
 *pyc
 /data/sample_tweets.csv
+/data/processed*
