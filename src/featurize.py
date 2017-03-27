@@ -34,4 +34,9 @@ USELESS_FEATURES = ["entities_user_mentions",
     "entities_hashtags",
     "user_name",
     "text",
-    "created_at"]
+    "created_at",
+    "in_reply_to_status_id",
+    "in_reply_to_status_id_str",
+    "in_reply_to_user_id_str",
+    "in_reply_to_screen_name",
+    "in_reply_to_user_id"]
