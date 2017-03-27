@@ -79,6 +79,9 @@ def compute_and_add_target(df):
     return df
 
 def standardize_target(df):
+    start = time.time()
+    sys.stdout.write("Standardizing target...\r")
+
     global target_encoder
 
     from sklearn.cluster import KMeans
@@ -101,6 +104,9 @@ def standardize_target(df):
     target_encoder.fit(target)
     df.tweetability =  target_encoder.transform(target)
 
+    print "Time to standardize target: {:,.2f} seconds".format(
+        time.time() - start)
+
     #df = df.drop(featurize.TARGET_FEATURES, axis=1)
 
     return df
@@ -122,7 +128,8 @@ def standardize_counts(df):
         warnings.filterwarnings("ignore",category=DeprecationWarning)
         df[feats] = df[feats].apply(_std)
 
-    print "Time to standardize: {:,.2f} seconds".format(time.time() - start)
+    print "Time to standardize counts: {:,.2f} seconds".format(
+        time.time() - start)
 
     return df
 

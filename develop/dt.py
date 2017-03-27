@@ -21,12 +21,12 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cross_validation import StratifiedKFold
 
 # this rU flag is some fix I found at https://github.com/pandas-dev/pandas/issues/11166
-df = core.read_csv("data/processed_toy_sample_tweets.csv")
+df = core.read_csv("data/processed_test_sample.csv")
 
-X_train = core.read_csv("data/processed_toy_sample_tweets_X_train.csv")
-y_train = core.read_csv("data/processed_toy_sample_tweets_y_train.csv")
-X_test = core.read_csv("data/processed_toy_sample_tweets_X_test.csv")
-y_test = core.read_csv("data/processed_toy_sample_tweets_y_test.csv")
+X_train = core.read_csv("data/processed_test_sample_X_train.csv")
+y_train = core.read_csv("data/processed_test_sample_y_train.csv")
+X_test = core.read_csv("data/processed_test_sample_X_test.csv")
+y_test = core.read_csv("data/processed_test_sample_y_test.csv")
 
 #
 # off the cuff feature dropping
@@ -34,10 +34,19 @@ y_test = core.read_csv("data/processed_toy_sample_tweets_y_test.csv")
 X_train = X_train[featurize.FEATURES]
 X_test = X_test[featurize.FEATURES]
 
-pipe_lr = Pipeline([('scl', StandardScaler()), ('clf', LogisticRegression(random_state=1))])
-pipe_lr.fit(X_train, y_train)
+c, r = y_train.shape
+y_train = y_train.as_matrix().reshape(c,)
+c, r = y_test.shape
+y_test = y_test.as_matrix().reshape(c,)
 
-kfold = StratifiedKFold(y=y_train, n_folds=10, random_state=1)
+pipe_lr = Pipeline([('scl', StandardScaler()),
+                    ('clf', LogisticRegression(random_state=1))])
+
+pipe_lr.fit(X_train, y_train, n_jobs=6)
+
+kfold = StratifiedKFold(y=y_train.reshape(c,),
+                        n_folds=10,
+                        random_state=1)
 scores = []
 
 for k, (train, test) in enumerate(kfold):
@@ -57,6 +66,9 @@ start = time.time()
 print "Fitting decision tree..."
 clf.fit(X_train, y_train)
 print "Time to fit dt: {} minutes".format((start - time.time()) / 60)
+pred_dt = clf.predict(X_test)
+print "Accuracy score of random forest: {:.2f}%".format(
+    accuracy_score(y_test, pred_dt) * 100)
 
 outfile = tree.export_graphviz(clf, out_file='filename.dot',
                                feature_names=X_train.columns)
@@ -67,6 +79,15 @@ outfile = tree.export_graphviz(clf, out_file='filename.dot',
 from sklearn.ensemble import RandomForestClassifier
 forest = RandomForestClassifier(n_estimators=1000, random_state=0, n_jobs=4)
 forest.fit(X_train, y_train)
+
+pred = forest.predict(X_test)
+pred_proba = forest.predict_proba(X_test)
+
+print "Log loss of random forest: {:.2f}%".format(
+    log_loss(y_test, pred_proba) * 100)
+print "Accuracy score of random forest: {:.2f}%".format(
+    accuracy_score(y_test, pred) * 100)
+
 
 clf1 = LogisticRegression(random_state=1)
 clf2 = RandomForestClassifier(random_state=1)

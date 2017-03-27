@@ -6,6 +6,9 @@ import matplotlib
 matplotlib.use("qt4agg")
 from matplotlib import pyplot as plt
 
+from src import core
+
+# defunct
 start = time.time()
 print "reading data..."
 data = io.open("./data_sample.json",
