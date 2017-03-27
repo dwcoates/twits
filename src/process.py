@@ -73,12 +73,12 @@ def compute_and_add_target(df):
         tweetability_metric = df.apply(lambda x: int(x.retweet_count + featurize.TWEETABILITY_PENALTY) / \
                                 (x.user_followers_count + 1), axis=1))
 
-    df = standardize_target(df)
+    df.tweetability = standardize_target(df.tweetability)
     print "Time compute and add tweetability: {:,.2f} seconds".format(time.time() - start)
 
     return df
 
-def standardize_target(df):
+def standardize_target(target, transform=lambda t: StandardScaler().fit_transform(np.log(t + 1))):
     start = time.time()
     sys.stdout.write("Standardizing target...\r")
 
@@ -86,8 +86,7 @@ def standardize_target(df):
 
     from sklearn.cluster import KMeans
 
-    scaled_tweetability = pd.Series(StandardScaler().fit_transform(np.log(
-        df.tweetability + 1)))
+    scaled_tweetability = pd.Series(target)
     target_classified = KMeans(n_clusters=3, random_state=0).fit(
         scaled_tweetability.reshape(-1, 1))
     def stringify(v):
@@ -102,14 +101,12 @@ def standardize_target(df):
     target = map(stringify, target_classified.labels_)
 
     target_encoder.fit(target)
-    df.tweetability =  target_encoder.transform(target)
+    target =  target_encoder.transform(target)
 
     print "Time to standardize target: {:,.2f} seconds".format(
         time.time() - start)
 
-    #df = df.drop(featurize.TARGET_FEATURES, axis=1)
-
-    return df
+    return target
 
 def standardize_counts(df):
     df = df.copy()
