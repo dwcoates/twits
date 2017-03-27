@@ -16,6 +16,9 @@ from sklearn.metrics import accuracy_score, log_loss
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.cross_validation import StratifiedKFold
 
 # this rU flag is some fix I found at https://github.com/pandas-dev/pandas/issues/11166
 df = core.read_csv("data/processed_toy_sample_tweets.csv")
@@ -30,6 +33,21 @@ y_test = core.read_csv("data/processed_toy_sample_tweets_y_test.csv")
 #
 X_train = X_train[featurize.FEATURES]
 X_test = X_test[featurize.FEATURES]
+
+pipe_lr = Pipeline([('scl', StandardScaler()), ('clf', LogisticRegression(random_state=1))])
+pipe_lr.fit(X_train, y_train)
+
+kfold = StratifiedKFold(y=y_train, n_folds=10, random_state=1)
+scores = []
+
+for k, (train, test) in enumerate(kfold):
+    pipe_lr.fit(X_train[train], y_train[train])
+    score = pipe_lr.score(X_train[test], y_train[test])
+    scores.append(score)
+    print 'Fold: {}, Class dist.: {}, Acc: {:.3f}'.format(k+1,
+                                                          np.bincount(y_train[train]),
+                                                          score)
+
 
 #
 # Simple Decision Tree Regressor
