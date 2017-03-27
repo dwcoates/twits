@@ -71,12 +71,10 @@ def compute_punctuation_usage(words):
     return v
 
 def get_hashtags(df):
-    tags = df.entities_hashtags.apply(ast.literal_eval)
-    return tags.apply(lambda tg: [t["text"] for t in tg])
+    return df.entities_hashtags.apply(ast.literal_eval)
 
 def get_user_mentions(df):
-    mentions = df.entities_user_mentions.apply(ast.literal_eval)
-    return mentions.apply(lambda tg: [t["screen_name"] for t in tg])
+    return df.entities_user_mentions.apply(ast.literal_eval)
 
 def compute_hashtag_info(tags, freqs):
     return tags.apply(lambda tgs: np.mean([freqs[t] for t in tgs])).fillna(0)
@@ -124,8 +122,8 @@ def process_text_attributes(df):
     words = pd.concat(words)
     # single-threaded version:
     ### words = df.text.apply(word_tokenize)
-    print "Time to tokenize: {:,.2f} minutes".format(
-        (time() - start) / 60)
+    print "Time to tokenize: {:,.2f} seconds".format(
+        time() - start)
 
     start = time()
     sys.stdout.write("Tallying word frequencies...\r")
@@ -137,28 +135,28 @@ def process_text_attributes(df):
     sys.stdout.write("Computing text word diversity...\r")
     df["text_diversity"] = compute_word_diversities(df, freqs)
     df["word_count"] = compute_word_count(words)
-    print "Time to compute text word diversity: {:,.2f} minutes".format(
-        (time() - start) / 60)
+    print "Time to compute text word diversity: {:,.2f} seconds".format(
+        time() - start)
 
     start = time()
     sys.stdout.write("Parsing hashtags and user_mentions...\r")
     hashtags = get_hashtags(df)
     user_mentions = get_user_mentions(df)
-    print "Time to parse hashtags and mentions: {:,.2f} minutes".format(
-        (time() - start) / 60)
+    print "Time to parse hashtags and mentions: {:,.2f} seconds".format(
+        time() - start)
 
     start = time()
     sys.stdout.write("Tallying hashtags and user_mentions freqencies...\r")
     hashtag_freqs = get_hashtag_freqs(hashtags)
     user_mention_freqs = get_user_mention_freqs(user_mentions)
-    print "Time to tally hashtag and mention frequencies: {:,.2f} minutes".format(
-        (time() - start) / 60)
+    print "Time to tally hashtag and mention frequencies: {:,.2f} seconds".format(
+        time() - start)
 
     start = time()
     sys.stdout.write("Computing punctuation usage...\r")
     df["punctuation_score"] = compute_punctuation_usage(words)
-    print "Time to compute punctuation usage: {:,.2f} minutes".format(
-        (time() - start) / 60)
+    print "Time to compute punctuation usage: {:,.2f} seconds".format(
+        time() - start)
 
     start = time()
     sys.stdout.write(
@@ -168,7 +166,7 @@ def process_text_attributes(df):
     df["user_hashtag_freq"] = compute_hashtag_info(hashtags, hashtag_freqs)
     df["user_mention_freq"] = compute_user_mention_info(user_mentions,
                                                         user_mention_freqs)
-    print "Time to computer hashtag and mention diversity: {:,.2f} minutes".format(
-        (time() - start) / 60)
+    print "Time to computer hashtag and mention diversity: {:,.2f} seconds".format(
+        time() - start)
 
     return df.drop(["entities_hashtags", "entities_user_mentions"], axis=1)

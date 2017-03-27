@@ -38,13 +38,11 @@ BASE_FEATURES = [("id_str",                    lambda d: d["id_str"]),
 BASE_HEADERS = zip(*BASE_FEATURES)[0]
 BASE_PATHS   = zip(*BASE_FEATURES)[1]
 
-DROP_COLUMNS = ["user_lang",
-                "user_notifications",
+DROP_COLUMNS = ["user_notifications",
                 "user_verified",
                 "user_following",
                 "retweeted",
-                "favorited",
-                "contributors"]
+                "favorited"]
 
 CORE_FEATURES = [h for h in BASE_HEADERS if h not in DROP_COLUMNS]
 

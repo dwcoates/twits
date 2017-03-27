@@ -30,7 +30,7 @@ def process_date_time(df):
     df.created_at = df.created_at.apply(parse)
     df["day"] = df.created_at.apply(lambda x: x.day)
     df["hour"] = df.created_at.apply(lambda x: x.hour)
-    print "Time to process dates: {:,.2f} minutes".format((time.time() - start) / 60)
+    print "Time to process dates: {:,.2f} seconds".format(time.time() - start)
 
     return df.drop('created_at', axis=1)
 
@@ -39,7 +39,7 @@ def process_retweet_count(df):
     sys.stdout.write("Dropping bad retweet data...\r")
     df = df[df.retweet_count.apply(lambda x: "+" not in str(x))]
     df.retweet_count = df.retweet_count.apply(int)
-    print "Time to drop bad data in retweets: {:,.2f} minutes".format((time.time() - start) / 60)
+    print "Time to drop bad data in retweets: {:,.2f} seconds".format(time.time() - start)
 
     return df
 
@@ -70,7 +70,7 @@ def compute_and_add_target(df):
                                 (x.user_followers_count + 1), axis=1))
 
     df = standardize_target(df)
-    print "Time compute and add tweetability: {:,.2f} minutes".format((time.time() - start) / 60)
+    print "Time compute and add tweetability: {:,.2f} seconds".format(time.time() - start)
 
 
     return df
@@ -110,7 +110,7 @@ def standardize_counts(df):
         warnings.filterwarnings("ignore",category=DeprecationWarning)
         df[feats] = df[feats].apply(_std)
 
-    print "Time to standardize: {:,.2f} minutes".format((time.time() - start) / 60)
+    print "Time to standardize: {:,.2f} seconds".format(time.time() - start)
 
     return df
 
