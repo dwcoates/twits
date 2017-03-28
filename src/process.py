@@ -66,8 +66,8 @@ def compute_and_add_target(df):
     start = time.time()
 
     df = df.assign(
-        tweetability = df.apply(lambda x: int(x.retweet_count + featurize.TWEETABILITY_PENALTY) / \
-                                (x.user_followers_count + 1), axis=1))
+        tweetability = df.apply(lambda x: int(x.retweet_retweet_count + featurize.TWEETABILITY_PENALTY) / \
+                                (x.retweet_followers_count + 1), axis=1))
 
     df = df.assign(
         tweetability_metric = df.apply(lambda x: int(x.retweet_count + featurize.TWEETABILITY_PENALTY) / \
@@ -108,6 +108,9 @@ def standardize_target(target, transform=lambda t: StandardScaler().fit_transfor
 
     return target
 
+def drop_none_retweets(df):
+    return df[~pd.isnull(df.retweet_id_str)]
+
 def standardize_counts(df):
     df = df.copy()
     start = time.time()
@@ -130,12 +133,12 @@ def standardize_counts(df):
 
     return df
 
-
 def process_df(df):
     original_size = df.size
 
     start = time.time()
 
+    df = drop_none_retweets(df)
     df = drop_extra_columns(df)
     df = drop_null_rows(df)
     df = process_date_time(df)

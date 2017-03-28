@@ -5,12 +5,14 @@ from time import time
 import sys
 import warnings
 import threading
+from collections import defaultdict
+
 
 import pandas as pd
 import numpy as np
 from nltk.tokenize import word_tokenize
 from nltk.probability import FreqDist
-from collections import defaultdict
+from textblob import TextBlob
 
 import itertools
 import json
@@ -45,6 +47,10 @@ def compute_word_diversities(df, freqs):
 def compute_word_count(words):
     return words.apply(len)
 
+def compute_text_sentiment(text):
+    return text.apply(lambda t: TextBlob(t).sentiment.polarity).rename(
+        "description_sentiment")
+
 def compute_punctuation_usage(words):
     """
     Very stupid 'algorithm' for describing punctuation usage
@@ -71,10 +77,10 @@ def compute_punctuation_usage(words):
     return v
 
 def get_hashtags(df):
-    return df.entities_hashtags.apply(ast.literal_eval)
+    return df.retweet_hashtags.apply(ast.literal_eval)
 
 def get_user_mentions(df):
-    return df.entities_user_mentions.apply(ast.literal_eval)
+    return df.retweet_user_mentions.apply(ast.literal_eval)
 
 def compute_hashtag_info(tags, freqs):
     return tags.apply(lambda tgs: np.mean([freqs[t] for t in tgs])).fillna(0)
@@ -132,6 +138,12 @@ def process_text_attributes(df):
         (time() - start) / 60)
 
     start = time()
+    sys.stdout.write("Computing text sentiment polarity...\r")
+    df["sentiment"] = compute_text_sentiment(df.retweet_text)
+    print "Time to determine text sentiment: {:,.2f} ".format(
+        (time() - start) / 60)
+
+    start = time()
     sys.stdout.write("Computing text word diversity...\r")
     df["text_diversity"] = compute_word_diversities(df, freqs)
     df["word_count"] = compute_word_count(words)
@@ -169,4 +181,4 @@ def process_text_attributes(df):
     print "Time to computer hashtag and mention diversity: {:,.2f} seconds".format(
         time() - start)
 
-    return df.drop(["entities_hashtags", "entities_user_mentions"], axis=1)
+    return df.drop(["entities_hashtags", "entities_user_mentions", "retweet_hashtags", "retweet_user_mentions"], axis=1)

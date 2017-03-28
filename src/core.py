@@ -43,7 +43,15 @@ BASE_FEATURES = [("id_str",                    lambda d: d["id_str"]),
                      ("retweet_created_at",        lambda d: d.get("retweeted_status", dict()).get("created_at")),
                      ("retweet_user_id",           lambda d: d.get("retweeted_status", dict()).get("user", dict()).get("id")),
                      ("retweet_retweet_count",     lambda d: d.get("retweeted_status", dict()).get("retweet_count")),
-                     ("retweet_favorited",         lambda d: d.get("retweeted_status", dict()).get("favorited"))]
+                     ("retweet_favorited",         lambda d: d.get("retweeted_status", dict()).get("favorited")),
+                     ("retweet_hashtags",          lambda d: [j["text"] for j in d.get("retweeted_status",
+                                                                                  dict()).get("entities",
+                                                                                                  dict()).get("hashtags",
+                                                                                                                  dict())]),
+                     ("retweet_user_mentions",     lambda d: [j["screen_name"] for j in d.get("retweeted_status",
+                                                                                         dict()).get("entities",
+                                                                                                     dict()).get("user_mentions",
+                                                                                                                 dict())])]
 
 BASE_HEADERS = zip(*BASE_FEATURES)[0]
 BASE_PATHS   = zip(*BASE_FEATURES)[1]
