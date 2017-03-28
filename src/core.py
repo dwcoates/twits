@@ -81,6 +81,7 @@ def read_csv(filename, suppress_msg=False):
 # this to write
 def to_csv(df, filename):
     start = time.time()
+    filename = os.path.abspath(filename)
     sys.stdout.write("Writing to '{}'...\r".format(filename))
     with open(filename, 'wb') as fout:
         df.to_csv(fout, encoding="utf8", index=False)

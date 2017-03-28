@@ -59,14 +59,14 @@ def csvify_json_obj(jobj, jqs=core.BASE_FEATURES):
     BASE_PATHS   = zip(*jqs)[1]
     return [p(jobj) for p in BASE_PATHS]
 
-def progress_bar(value=0, endvalue=1, bar_length=50):
+def progress_bar(value=0, endvalue=1, bar_length=50, exceptions=0):
     percent = float(value) / endvalue
     arrow = '#' * int(round(percent * bar_length)-1) + '>'
     spaces = '_' * (bar_length - len(arrow))
 
     sys.stdout.write(
-        "Percent: [{0}] {1:.2f}% | [{2:,}/{3:,}]\r".format(arrow + spaces,
-                                                       percent  * 100, value, endvalue))
+        "Processing: [{0}] {1:.2f}% | [{2:,}/{3:,}] ({4:,} exceptions)\r".format(arrow + spaces,
+                                                       percent  * 100, value, endvalue, exceptions))
     sys.stdout.flush()
 
 def process_json(filename, output_filename, gz=False, i=0, n=1, f_num=False):
@@ -84,7 +84,7 @@ def process_json(filename, output_filename, gz=False, i=0, n=1, f_num=False):
 
     fnum_str = "File #{}:".format(f_num) if f_num else ""
     print "{}Reading and processing '{}'...\r".format(fnum_str, filename)
-    progress_bar(i, n)
+    progress_bar(i, n, exceptions=history["other_exceptions"])
     with open(output_filename, 'wb') as fout:
         tweet_writer = csv.writer(fout)
         tweet_writer.writerow(core.BASE_HEADERS) # csv header
@@ -100,11 +100,10 @@ def process_json(filename, output_filename, gz=False, i=0, n=1, f_num=False):
                 if "user" not in j:
                     logging.error(
                         ("Attempt to parse json object" +
-                         "without 'user' key: {} with keys: {}").format(j,
-                                                                        j.keys()))
+                         "without 'user' key: {} with keys: {}").format(
+                             j, j.keys()))
                 elif j["user"]["lang"] == "en":
                     tweet_writer.writerow(csvify_json_obj(j, jqs = jq))
-
                     history["english_count"] += 1
                 else:
                     # don't care about non-English tweets
