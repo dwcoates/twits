@@ -1,16 +1,8 @@
 library(shiny)
 
-# Create Input controls
-day = Slider(title="Day", value=0, start=0, end=7, step=1)
-retweets = Slider(title="Retweets", value=0, start=0, end=7, step=1)
-
-# Define UI for application that draws a histogram
 fluidPage(
+  titlePanel("Retweets by day"),
 
-  # Application title
-  titlePanel("Hello Shiny!"),
-
-  # Sidebar with a slider input for the number of bins
   sidebarLayout(
     sidebarPanel(
       sliderInput("day",
@@ -21,7 +13,7 @@ fluidPage(
       sliderInput("retweets",
                   "Max number of retweets:",
                   min = 1,
-                  max = 30000,
+                  max = 1000,
                   value = 1)
     ),
     # Show a plot of the generated distribution

@@ -1,4 +1,5 @@
 library(shiny)
+library(ggplot2)
 library(data.table)
 
 tweets <- fread("../../data/processed_toy_sample_tweets.csv")
@@ -17,11 +18,12 @@ function(input, output) {
   #  2) Its output type is a plot
 
   output$distPlot <- renderPlot({
-    tweets[(tweets$day == input$day) & (tweets$retweet_count > input$retweets)]
+    r <- tweets[(tweets$day == input$day) & (tweets$retweet_count > input$retweets)]
 
-    ggplot(r, aes(x = tweets$retweet_count,
-                  y = tweets$user_favourites_count,
-                  color = price.range)) +
+    ggplot(r, aes(x = r$retweet_count,
+                  y = r$user_favourites_count,
+                  ## color = r$color
+                  )) +
         geom_point() +
         guides(color=tweets$color) +
         ## scale_y_continuous(limits = c(0, 1)) +
