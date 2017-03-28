@@ -52,11 +52,12 @@ def read_json(filename, gz=None):
 
     return data
 
-def csvify_json_obj(jobj):
+def csvify_json_obj(jobj, jqs=core.BASE_FEATURES):
     """
     Return the json object ``jobj`` flattened into a line of csv
     """
-    return [p(jobj) for p in core.BASE_PATHS]
+    BASE_PATHS   = zip(*jqs)[1]
+    return [p(jobj) for p in BASE_PATHS]
 
 def progress_bar(value=0, endvalue=1, bar_length=50):
     percent = float(value) / endvalue
@@ -90,6 +91,7 @@ def process_json(filename, output_filename, gz=False, i=0, n=1, f_num=False):
         js = read_json(filename, gz=gz)
         # print "Processing..."
         for i, j in enumerate(js):
+            jq = core.BASE_FEATURES[:]
             if "delete" in j:
                 continue # ignore deletes for now
             if "scrub_geo" in j:
@@ -101,7 +103,8 @@ def process_json(filename, output_filename, gz=False, i=0, n=1, f_num=False):
                          "without 'user' key: {} with keys: {}").format(j,
                                                                         j.keys()))
                 elif j["user"]["lang"] == "en":
-                    tweet_writer.writerow(csvify_json_obj(j))
+                    tweet_writer.writerow(csvify_json_obj(j, jqs = jq))
+
                     history["english_count"] += 1
                 else:
                     # don't care about non-English tweets
@@ -115,7 +118,7 @@ def process_json(filename, output_filename, gz=False, i=0, n=1, f_num=False):
                 raise ex
             except Exception as ex:
                 history["other_exceptions"] += 1
-                print "ERROR: Unexpected exception."
+                print "ERROR: Unexpected exception: {}".format(ex.message)
                 logging.error("Other exception: {}".format(ex.message))
 
     logging.info("Finished reading '{}'...".format(filename))
@@ -133,8 +136,8 @@ if __name__ == "__main__":
                 __file__,
                 len(sys.argv) - 1))
 
-    DEST_PATH = os.path.abspath(sys.argv[2])
     DATA_PATH = os.path.abspath(sys.argv[1])
+    DEST_PATH = os.path.abspath(sys.argv[2])
     TEST_LIMIT = int(sys.argv[3]) if len(sys.argv) >= 4 else None
 
     # be careful to not delete stuff that shouldn't be deleted
