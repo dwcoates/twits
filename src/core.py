@@ -34,7 +34,17 @@ BASE_FEATURES = [("id_str",                    lambda d: d["id_str"]),
                      ("in_reply_to_user_id",       lambda d: d["in_reply_to_user_id"]),
                      ("entities_hashtags",         lambda d: [j["text"] for j in d["entities"]["hashtags"]]),
                      ("entities_user_mentions",    lambda d: [j["screen_name"] for j in d["entities"]["user_mentions"]]),
-                     ("favorited",                 lambda d: d["favorited"])]
+                     ("favorited",                 lambda d: d["favorited"]),
+                     ("retweet_id_str",            lambda d: d.get("retweeted_status", dict()).get("id_str")),
+                     ("retweet_text",              lambda d: d.get("retweeted_status", dict()).get("text")),
+                     ("retweet_favourites_count",  lambda d: d.get("retweeted_status", dict()).get("user", dict()).get("favourites_count")),
+                     ("retweet_statuses_count",    lambda d: d.get("retweeted_status", dict()).get("user", dict()).get("statuses_count")),
+                     ("retweet_friends_count",     lambda d: d.get("retweeted_status", dict()).get("user", dict()).get("friends_count")),
+                     ("retweet_created_at",        lambda d: d.get("retweeted_status", dict()).get("created_at")),
+                     ("retweet_user_id",           lambda d: d.get("retweeted_status", dict()).get("user", dict()).get("id")),
+                     ("retweet_retweet_count",     lambda d: d.get("retweeted_status", dict()).get("retweet_count")),
+                     ("retweet_favorited",         lambda d: d.get("retweeted_status", dict()).get("favorited"))]
+
 BASE_HEADERS = zip(*BASE_FEATURES)[0]
 BASE_PATHS   = zip(*BASE_FEATURES)[1]
 
