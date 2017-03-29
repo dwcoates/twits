@@ -18,21 +18,25 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.cross_validation import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.cross_validation import StratifiedShuffleSplit
 
 # this rU flag is some fix I found at https://github.com/pandas-dev/pandas/issues/11166
-df = core.read_csv("data/processed_test_sample.csv")
+df = core.read_csv("./data/processed_small_test_sample.csv")
 
-X_train = core.read_csv("data/processed_test_sample_X_train.csv")
-y_train = core.read_csv("data/processed_test_sample_y_train.csv")
-X_test = core.read_csv("data/processed_test_sample_X_test.csv")
-y_test = core.read_csv("data/processed_test_sample_y_test.csv")
+X_train = core.read_csv("data/processed_small_test_sample_X_train.csv")
+X_test = core.read_csv("data/processed_small_test_sample_X_test.csv")
+y_train = core.read_csv("data/processed_small_test_sample_y_train.csv")
+y_test = core.read_csv("data/processed_small_test_sample_y_test.csv")
+
 
 #
 # off the cuff feature dropping
 #
 X_train = X_train[featurize.FEATURES]
 X_test = X_test[featurize.FEATURES]
+
 
 c, r = y_train.shape
 y_train = y_train.as_matrix().reshape(c,)
@@ -42,12 +46,18 @@ y_test = y_test.as_matrix().reshape(c,)
 pipe_lr = Pipeline([('scl', StandardScaler()),
                     ('clf', LogisticRegression(random_state=1))])
 
-pipe_lr.fit(X_train, y_train, n_jobs=6)
+pipe_lr.fit(X_train.as_matrix(), y_train.reshape(-1,1), n_jobs=6)
 
-kfold = StratifiedKFold(y=y_train.reshape(c,),
-                        n_folds=10,
-                        random_state=1)
+skf = StratifiedKFold(n_splits=2)
+skf.get_n_splits(X_train, y_train)
 scores = []
+
+sss = StratifiedShuffleSplit(y_train, n_iter=3)
+for train_index, test_index in sss:
+    print train_index
+    print test_index
+    # X_train, X_test = X_train.iloc[train_index], X_test.iloc[test_index]
+    # y_train, y_test = y_train[train_index], y_test[test_index]
 
 for k, (train, test) in enumerate(kfold):
     pipe_lr.fit(X_train[train], y_train[train])
