@@ -18,7 +18,7 @@ import itertools
 import json
 import ast
 
-from src import frequency_dist
+from twits.src import frequency_dist
 
 def progress_bar(value, endvalue, bar_length=20):
     percent = float(value) / endvalue
@@ -76,11 +76,11 @@ def compute_punctuation_usage(words):
 
     return v
 
-def get_hashtags(df):
-    return df.retweet_hashtags.apply(ast.literal_eval)
+def get_hashtags(hashtags):
+    return hashtags.apply(ast.literal_eval)
 
-def get_user_mentions(df):
-    return df.retweet_user_mentions.apply(ast.literal_eval)
+def get_user_mentions(user_mentions):
+    return user_mentions.apply(ast.literal_eval)
 
 def compute_hashtag_info(tags, freqs):
     return tags.apply(lambda tgs: np.mean([freqs[t] for t in tgs])).fillna(0)
@@ -134,14 +134,14 @@ def process_text_attributes(df):
     start = time()
     sys.stdout.write("Tallying word frequencies...\r")
     freqs = get_text_word_freqs(df, words)
-    print "Time to text tally frequencies: {:,.2f} ".format(
-        (time() - start) / 60)
+    print "Time to text tally frequencies: {:,.2f} seconds".format(
+        (time() - start))
 
     start = time()
     sys.stdout.write("Computing text sentiment polarity...\r")
-    df["sentiment"] = compute_text_sentiment(df.retweet_text)
-    print "Time to determine text sentiment: {:,.2f} ".format(
-        (time() - start) / 60)
+    df["sentiment"] = compute_text_sentiment(df.text)
+    print "Time to determine text sentiment: {:,.2f} seconds".format(
+        (time() - start))
 
     start = time()
     sys.stdout.write("Computing text word diversity...\r")
@@ -152,8 +152,8 @@ def process_text_attributes(df):
 
     start = time()
     sys.stdout.write("Parsing hashtags and user_mentions...\r")
-    hashtags = get_hashtags(df)
-    user_mentions = get_user_mentions(df)
+    hashtags = get_hashtags(df.entities_hashtags)
+    user_mentions = get_user_mentions(df.entities_hashtags)
     print "Time to parse hashtags and mentions: {:,.2f} seconds".format(
         time() - start)
 
@@ -162,12 +162,6 @@ def process_text_attributes(df):
     hashtag_freqs = get_hashtag_freqs(hashtags)
     user_mention_freqs = get_user_mention_freqs(user_mentions)
     print "Time to tally hashtag and mention frequencies: {:,.2f} seconds".format(
-        time() - start)
-
-    start = time()
-    sys.stdout.write("Computing punctuation usage...\r")
-    df["punctuation_score"] = compute_punctuation_usage(words)
-    print "Time to compute punctuation usage: {:,.2f} seconds".format(
         time() - start)
 
     start = time()
@@ -180,5 +174,75 @@ def process_text_attributes(df):
                                                         user_mention_freqs)
     print "Time to computer hashtag and mention diversity: {:,.2f} seconds".format(
         time() - start)
+
+    start = time()
+    sys.stdout.write("Tokenizing retweet text words...\r")
+    threads = []
+    num_threads = 8
+    words = [None] * num_threads
+    texts = np.array_split(df.retweet_text, num_threads)
+    for i in range(num_threads):
+        t = threading.Thread(target=process_tokens)
+        threads.append(t)
+        t.start()
+    for t in threads:
+        t.join()
+    words = pd.concat(words)
+    # single-threaded version:
+    ### words = df.text.apply(word_tokenize)
+    print "Time to tokenize retweet text: {:,.2f} seconds".format(
+        time() - start)
+
+    start = time()
+    sys.stdout.write("Tallying retweet text word frequencies...\r")
+    freqs = get_text_word_freqs(df, words)
+    print "Time to text tally frequencies: {:,.2f} seconds".format(
+        (time() - start))
+
+    start = time()
+    sys.stdout.write("Computing retweet text sentiment polarity...\r")
+    df["retweet_sentiment"] = compute_text_sentiment(df.retweet_text)
+    print "Time to determine text sentiment: {:,.2f} seconds".format(
+        (time() - start))
+
+    start = time()
+    sys.stdout.write("Computing retweet text word diversity...\r")
+    df["retweet_text_diversity"] = compute_word_diversities(df, freqs)
+    df["retweet_word_count"] = compute_word_count(words)
+    print "Time to compute text word diversity: {:,.2f} seconds".format(
+        time() - start)
+
+    start = time()
+    sys.stdout.write("Parsing retweet hashtags and user_mentions...\r")
+    hashtags = get_hashtags(df.retweet_hashtags)
+    user_mentions = get_user_mentions(df.retweet_user_mentions)
+    print "Time to parse hashtags and mentions: {:,.2f} seconds".format(
+        time() - start)
+
+    start = time()
+    sys.stdout.write("Tallying retweet hashtags and user_mentions freqencies...\r")
+    hashtag_freqs = get_hashtag_freqs(hashtags)
+    user_mention_freqs = get_user_mention_freqs(user_mentions)
+    print "Time to tally hashtag and mention frequencies: {:,.2f} seconds".format(
+        time() - start)
+
+    start = time()
+    sys.stdout.write("Computing retweet punctuation usage...\r")
+    df["retweet_punctuation_score"] = compute_punctuation_usage(words)
+    print "Time to compute punctuation usage: {:,.2f} seconds".format(
+        time() - start)
+
+    start = time()
+    sys.stdout.write(
+        "Computing hashtag and user_mentions diversity...\r")
+    df["retweet_hashtag_count"] = hashtags.apply(len)
+    df["retweet_user_mentions_count"] = user_mentions.apply(len)
+    df["retweet_hashtag_freq"] = compute_hashtag_info(hashtags, hashtag_freqs)
+    df["retweet_user_mention_freq"] = compute_user_mention_info(user_mentions,
+                                                        user_mention_freqs)
+    print "Time to computer hashtag and mention diversity: {:,.2f} seconds".format(
+        time() - start)
+
+
 
     return df.drop(["entities_hashtags", "entities_user_mentions", "retweet_hashtags", "retweet_user_mentions"], axis=1)

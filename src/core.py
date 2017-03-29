@@ -4,6 +4,7 @@ Core stuff
 
 import sys
 import time
+import os
 
 import pandas as pd
 
@@ -38,6 +39,7 @@ BASE_FEATURES = [("id_str",                    lambda d: d["id_str"]),
                      ("retweet_id_str",            lambda d: d.get("retweeted_status", dict()).get("id_str")),
                      ("retweet_text",              lambda d: d.get("retweeted_status", dict()).get("text")),
                      ("retweet_favourites_count",  lambda d: d.get("retweeted_status", dict()).get("user", dict()).get("favourites_count")),
+                     ("retweet_followers_count",   lambda d: d.get("retweeted_status", dict()).get("user", dict()).get("followers_count")),
                      ("retweet_statuses_count",    lambda d: d.get("retweeted_status", dict()).get("user", dict()).get("statuses_count")),
                      ("retweet_friends_count",     lambda d: d.get("retweeted_status", dict()).get("user", dict()).get("friends_count")),
                      ("retweet_created_at",        lambda d: d.get("retweeted_status", dict()).get("created_at")),

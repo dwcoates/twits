@@ -138,8 +138,6 @@ if __name__ == "__main__":
     except Exception as ex:
         print ("ERROR: Uncaught exception in sample_files " +
                "call. This shouldn't happen: {}".format(ex.message))
-        print DIRECTORY
-        print SAMPLES_FILE
-        print PORTION
+        print ex.args
         logging.error( ("ERROR: Uncaught exception " +
                         "in sample_files call: {}").format(ex.message))

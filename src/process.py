@@ -7,9 +7,9 @@ import time
 import warnings
 from datetime import datetime
 
-from src import core
-from src import featurize
-from src import text
+from twits.src import core
+from twits.src import featurize
+from twits.src import text
 
 import pandas as pd
 import numpy as np
@@ -42,7 +42,9 @@ def process_retweet_count(df):
     start = time.time()
     sys.stdout.write("Dropping bad retweet data...\r")
     df = df[df.retweet_count.apply(lambda x: "+" not in str(x))]
+    df = df[df.retweet_retweet_count.apply(lambda x: "+" not in str(x))]
     df.retweet_count = df.retweet_count.apply(int)
+    df.retweet_retweet_count = df.retweet_retweet_count.apply(lambda x: int(float(x)))
     print "Time to drop bad data in retweets: {:,.2f} seconds".format(time.time() - start)
 
     return df
@@ -66,12 +68,12 @@ def compute_and_add_target(df):
     start = time.time()
 
     df = df.assign(
-        tweetability = df.apply(lambda x: int(x.retweet_retweet_count + featurize.TWEETABILITY_PENALTY) / \
+        tweetability = df.apply(lambda x: float(x.retweet_retweet_count + 1) / \
                                 (x.retweet_followers_count + 1), axis=1))
 
     df = df.assign(
-        tweetability_metric = df.apply(lambda x: int(x.retweet_count + featurize.TWEETABILITY_PENALTY) / \
-                                (x.user_followers_count + 1), axis=1))
+        tweetability_metric = df.apply(lambda x: int(x.retweet_retweet_count + 1) / \
+                                (x.retweet_followers_count + 1), axis=1))
 
     df.tweetability = standardize_target(df.tweetability)
     print "Time compute and add tweetability: {:,.2f} seconds".format(time.time() - start)
@@ -84,24 +86,16 @@ def standardize_target(target, transform=lambda t: StandardScaler().fit_transfor
 
     global target_encoder
 
-    from sklearn.cluster import KMeans
-
-    scaled_tweetability = pd.Series(target)
-    target_classified = KMeans(n_clusters=3, random_state=0).fit(
-        scaled_tweetability.reshape(-1, 1))
     def stringify(v):
-        if v == 0:
+        if v < 0.000353:
             return "Low"
-        elif v == 1:
-            return "Medium"
-        elif v == 2:
+        elif v > 0.013514:
             return "High"
-        raise ValueError("Unexpected tweetability partition: {}".format(v))
+        else:
+            return "Medium"
 
-    target = map(stringify, target_classified.labels_)
-
-    target_encoder.fit(target)
-    target =  target_encoder.transform(target)
+    target = target.map(stringify)
+    target =  target_encoder.fit_transform(target)
 
     print "Time to standardize target: {:,.2f} seconds".format(
         time.time() - start)
