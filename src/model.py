@@ -81,6 +81,8 @@ pred_dt = clf.predict(X_test)
 print "Accuracy score of random forest: {:.2f}%".format(
     accuracy_score(y_test, pred_dt) * 100)
 
+log_loss(y_test, clf.predict_proba(X_test))
+
 outfile = tree.export_graphviz(clf, out_file='filename.dot',
                                feature_names=X_train.columns)
 
